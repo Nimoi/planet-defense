@@ -36,9 +36,15 @@ var app = {
 		app.clearCanvas();
 		app.drawStars();
 		app.drawPlanet();
-		app.updateTowers();
-		app.updateEnemies();
-		app.updateProjectiles();
+		if(app.towers.length > 0) {
+			app.updateTowers();
+		}
+		if(app.enemies.length > 0) {
+			app.updateEnemies();
+		}
+		if(app.projectiles.length > 0) {
+			app.updateProjectiles();
+		}
 	},
 	clearCanvas: function() {
 		ctx.clearRect(0,0,app.width,app.height);
@@ -155,7 +161,7 @@ var app = {
 				// Is target in range?
 			} else if(app.inRange(app.towers[i], app.towers[i].target)) {
 				// Is target alive?
-				console.log(app.towers[i].target.hp);
+				console.log('Target health: '+app.towers[i].target.hp);
 				if(app.towers[i].target.hp > 0) {
 					app.shootTarget(app.towers[i], app.towers[i].target);
 				} else {
@@ -190,13 +196,15 @@ var app = {
 		for(i=0; i < app.projectiles.length; i++) {
 			var type;
 			if(app.projectiles[i].target.team == 'player') {
-				type = app.enemies;
-			} else {
 				type = app.towers;
+			} else {
+				type = app.enemies;
 			}
-			console.log(type.indexOf(app.projectiles[i].target));
+			console.log('Is target in array: '+type.indexOf(app.projectiles[i].target));
+			console.log('Num projectiles: '+app.projectiles.length);
 			if(type.indexOf(app.projectiles[i].target) == -1) {
 				app.projectiles.splice(j, 1);
+				console.log('Num projectiles: '+app.projectiles.length);
 				console.log('bullet removed!');
 			}
 
