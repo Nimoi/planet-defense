@@ -1,0 +1,64 @@
+/*General page styles*/
+*, *:before, *:after {
+	-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+}
+
+body {
+	font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+	display: block;
+	background: #111;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+}
+
+/*Page wrapper*/
+.wrapper {
+	width: 100%;
+}
+
+/*App panel*/
+.app {
+	color: #fff;
+	width: 642px;
+	padding: 40px 0;
+	margin: 0 auto;
+}
+
+/*Main info bar*/
+.info-main {
+	background: #333;
+	padding: 5px 10px;
+	overflow: hidden;
+}
+.info-main h2 {
+	display: block;
+	padding: 0;
+	margin: 0;
+	float: left;
+}
+
+/*Main menu*/
+.menu-main {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	float: right;
+}
+.menu-main li {
+	
+}
+.menu-main a {
+
+}
+.menu-main a:hover {
+	
+}
+
+/*Game stage*/
+#stage {
+	display: block;
+	background: #101010;
+	margin: 0 auto;
+	border: 1px solid #333;
+}

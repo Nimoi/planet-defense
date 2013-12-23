@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Planets</title>
+	<link rel="stylesheet" href="css.css">
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+	<script>
+		/* Planetary Defense (reverse asteroids?)
+		* - Defend your planets against attackers
+		* - Build and upgrade defenses
+		* - Expand your planetary empire
+		*/
+		$(document).ready(function() {
+			app.initialize();
+		});
+		var app = {
+			width: 640,
+			height: 360,
+			stars: [],
+			planet: {},
+			towers: [],
+			enemies: [],
+			projectiles: [],
+			initialize: function() {
+				// Init canvas
+				canvas = document.getElementById("stage");
+				canvas.width  = app.width;
+				canvas.height = app.height;
+				ctx = canvas.getContext("2d");
+
+				// Init entities
+				app.initStars();
+				app.newPlanet();
+				app.initEnemies();
+				app.buildTower();
+
+				// Start main loop
+				setInterval(app.gameLoop, 25);
+			},
+			gameLoop: function() {
+				app.clearCanvas();
+				app.drawStars();
+				app.drawPlanet();
+				app.updateTowers();
+				app.updateEnemies();
+				app.updateProjectiles();
+			},
+			clearCanvas: function() {
+				ctx.clearRect(0,0,app.width,app.height);
+			},
+			initStars: function() {
+		        for (i=0; i<=70; i++) {
+		          // Get random positions for stars
+		          var starx = ~~(Math.random() * app.width);
+		          var stary = ~~(Math.random() * app.height);
+
+		          // Make the stars white
+		          starFill = "rgba(255, 255, 255, "+Math.random()+")";
+
+		          // Get random size for stars
+		          starSize = ~~(Math.random() * 3);
+		          app.stars.push([starFill, starx, stary, starSize]);
+		        }
+			},
+			drawStars: function() {
+				for (i=0; i < app.stars.length; i++) {
+		          // Draw the given star
+		          ctx.fillStyle = app.stars[i][0];
+		          ctx.beginPath();
+		          ctx.arc(app.stars[i][1], app.stars[i][2], app.stars[i][3], 0, Math.PI * 2, true);
+		          ctx.closePath();
+		          ctx.fill();
+		        }
+			},
+			// Generate a new planet
+			newPlanet: function() {
+				app.planet.color1 = "rgba(255, 255, 255, 1)";
+				app.planet.color2 = app.randColor();
+				app.planet.x = app.width/2;
+				app.planet.y = app.height/2;
+				app.planet.radius = 100;
+			},
+			drawPlanet: function() {
+				var x = app.planet.x;
+				var y = app.planet.y;
+				var innerRadius = 1;
+				var outerRadius = app.planet.radius;
+				var gradient = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
+				gradient.addColorStop(0, app.planet.color1);
+				gradient.addColorStop(1, app.planet.color2);
+				ctx.fillStyle = gradient;
+				ctx.beginPath();
+				ctx.arc(x, y, outerRadius, 0, Math.PI * 2, true);
+				ctx.closePath();
+				ctx.fill();
+			},
+			// Generate a tower (temp)
+			buildTower: function() {
+				var x = 438;
+				var y = 243;
+				var radius = 10;
+				var range = 50;
+				var ammo = 3;
+				var rate = 500;
+				app.towers.push({
+					'x':x,
+					'y':y,
+					'radius':radius,
+					'range':range,
+					'ammo':ammo,
+					'rate':rate,
+					'delay': false,
+					'target':''
+				});
+			},
+			updateTowers: function() {
+				for(i=0;i < app.towers.length; i++) {
+					ctx.fillStyle = '#0084ff';
+					ctx.beginPath();
+					ctx.arc(app.towers[i].x, app.towers[i].y, app.towers[i].radius, 0, Math.PI * 2, true);
+					ctx.closePath();
+					ctx.fill();
+
+					if(app.towers[i].target == '') {
+						app.findTarget(app.towers[i], 'creep');
+					} else if(app.inRange(app.towers[i], app.towers[i].target)) {
+						console.log('Tower shooting!');
+						app.shootTarget(app.towers[i], app.towers[i].target);
+					}
+				}
+			},
+			// Generate enemies
+			initEnemies: function() {
+				for(i=0; i < 1; i++) {
+					var size = 10;
+					var x = app.width-20;
+					var y = app.height-20;
+					var range = 50;
+					var speed = 2;
+					var ammo = 2;
+					var rate = 500; // rate between shots
+					app.enemies.push({
+						'x':x,
+						'y':y,
+						'size':size,
+						'speed':speed,
+						'range':range,
+						'ammo':ammo,
+						'rate':rate,
+						'delay': false,
+						'target':app.planet
+					});
+				}
+			},
+			updateEnemies: function() {
+				ctx.fillStyle = "red";
+				for(i=0; i < app.enemies.length; i++) {
+					ctx.fillRect(app.enemies[i].x, app.enemies[i].y, app.enemies[i].size, app.enemies[i].size);
+
+					if(app.enemies[i].target == app.planet) {
+						app.findTarget(app.enemies[i], 'towers');
+					}
+
+					// TODO: Check if target is alive
+					if(app.inRange(app.enemies[i], app.enemies[i].target)) {
+						// app.shootTarget(app.enemies[i], app.enemies[i].target);
+					} else {
+						app.moveTarget(app.enemies[i]);
+					}
+				}
+			},
+			moveTarget: function(unit) {
+				// Rotate us to face the target
+			    var rotation = Math.atan2(unit.target.y - unit.y, unit.target.x - unit.x);
+			    // Move towards the target
+			    unit.x += Math.cos(rotation) * unit.speed;
+			    unit.y += Math.sin(rotation) * unit.speed;
+			},
+			shootTarget: function(unit, target) {
+				// console.log(unit.ammo);
+				// console.log(unit.delay);
+				if(unit.ammo > 0) {
+					if(!unit.delay) {
+						console.log(app.projectiles);
+						app.projectiles.push({
+							'x':unit.x,
+							'y':unit.y,
+							'speed':4,
+							'target':target,
+							'type':'bullet',
+							'radius':2,
+							'owner':unit
+						});
+						console.log('Creating projectile!');
+						--unit.ammo;
+						unit.delay = true;
+						var current = unit;
+						window.setTimeout(function() {
+						    current.delay = false;
+						}, unit.rate);
+					}
+				}
+			},
+			findTarget: function(unit, enemy) {
+				if(enemy == 'towers') {
+					enemy = app.towers;
+				} else {
+					enemy = app.enemies;
+				}
+				// Loop through targettable enemies
+				for(j=0; j < enemy.length; j++) {
+					if(app.inRange(unit, enemy[j])) {
+						unit.target = enemy[j];
+						break;
+					}
+				}
+			},
+			updateProjectiles: function() {
+				for(i=0; i < app.projectiles.length; i++) {
+					app.moveTarget(app.projectiles[i]);
+			    	// Check collision
+				    if(!app.collideDetect('sphere', app.projectiles[i], app.projectiles[i].target)) {
+				    	// Return ammo
+				    	++app.projectiles[i].owner.ammo;
+
+				    	// Remove projectile
+				    	app.projectiles.splice(i, 1);
+				    } else {
+				    	// Draw projectile
+					    if (app.projectiles[i].type == 'bullet') {
+						    ctx.fillStyle = 'red';
+							ctx.beginPath();
+							ctx.arc(app.projectiles[i].x, app.projectiles[i].y, app.projectiles[i].radius, 0, Math.PI * 2, true);
+							ctx.closePath();
+							ctx.fill();
+					    }
+				    }
+				}
+			},
+			inRange: function(unit1, unit2) {
+				var distance = Math.sqrt(Math.pow(unit1.x - unit2.x, 2) + Math.pow(unit1.y - unit2.y, 2));
+				if(distance > unit1.range) {
+					return false;
+				} else {
+					return true;
+				}
+			},
+			collideDetect: function(type, object1, object2) {
+				if(type == 'sphere') {
+					var squareX = Math.pow(Math.abs(object1.x - object2.x), 2);
+				    var squareY = Math.pow(Math.abs(object1.y - object2.y), 2);
+				    var hypothenuse = Math.sqrt(squareX + squareY);
+				    var distance = hypothenuse - object1.radius - object2.radius;
+
+				    if (distance >= 0) {
+				        return true;
+				    }
+				    return false;
+				} else {
+					if (object1.x < object2.x + object2.width
+						&& object1.x + object1.width  > object2.x
+						&& object1.y < object2.y + object2.height
+						&& object1.y + object1.height > object2.y) {
+						// The objects are touching
+						return true;
+					} else {
+						return false;
+					}
+				}
+				
+			},
+			// Generate a random color
+			randColor: function() {
+				return '#'+ ('000000' + Math.floor(Math.random()*16777215).toString(16)).slice(-6);
+			},
+			reSort: function(array) {
+				var i = array.length;
+				while (i--) {
+				    if (array[i] != undefined) {
+				    	array.splice(array[i],1);
+			        }
+				}
+			}
+		}
+	</script>
+</head>
+<body>
+	<div class="wrapper">
+		<div class="app">
+			<div class="info-main">
+				<h2>Planet Defense</h2>
+				<ul class="menu-main"></ul>
+			</div>
+			<canvas id="stage" width="640" height="360">
+				Sorry, your browser is not supported.
+			</canvas>
+		</div>
+	</div>
+</body>
+</html>
