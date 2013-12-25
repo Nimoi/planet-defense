@@ -5,6 +5,15 @@
 */
 $(document).ready(function() {
 	app.initialize();
+	$('.action-pause').on('click', function() {
+		if(app.pause == false) {
+			app.pause = true;
+			$(this).html("Play");
+		} else {
+			app.pause = false;
+			$(this).html("Pause");
+		}
+	});
 });
 var app = {
 	width: 640,
@@ -16,6 +25,7 @@ var app = {
 	projectiles: [],
 	spawnRate: 2000,
 	numEnemies: 1,
+	pause: false,
 	initialize: function() {
 		// Init canvas
 		canvas = document.getElementById("stage");
@@ -33,17 +43,19 @@ var app = {
 		setInterval(app.gameLoop, 25);
 	},
 	gameLoop: function() {
-		app.clearCanvas();
-		app.drawStars();
-		app.drawPlanet();
-		if(app.projectiles.length > 0) {
-			app.updateProjectiles();
-		}
-		if(app.towers.length > 0) {
-			app.updateTowers();
-		}
-		if(app.enemies.length > 0) {
-			app.updateEnemies();
+		if(app.pause == false) {
+			app.clearCanvas();
+			app.drawStars();
+			app.drawPlanet();
+			if(app.projectiles.length > 0) {
+				app.updateProjectiles();
+			}
+			if(app.towers.length > 0) {
+				app.updateTowers();
+			}
+			if(app.enemies.length > 0) {
+				app.updateEnemies();
+			}
 		}
 	},
 	clearCanvas: function() {
