@@ -26,6 +26,7 @@ var app = {
 	spawnRate: 2000,
 	numEnemies: 1,
 	pause: false,
+	FPS:30,
 	initialize: function() {
 		// Init canvas
 		canvas = document.getElementById("stage");
@@ -40,7 +41,7 @@ var app = {
 		app.buildTower();
 
 		// Start main loop
-		setInterval(app.gameLoop, 25);
+		setInterval(app.gameLoop, 1000/app.FPS);
 	},
 	gameLoop: function() {
 		if(app.pause == false) {
@@ -103,6 +104,28 @@ var app = {
 		gradient.addColorStop(0, app.planet.shine);
 		gradient.addColorStop(1, app.planet.style);
 		ctx.fillStyle = gradient;
+		ctx.beginPath();
+		ctx.arc(x, y, outerRadius, 0, Math.PI * 2, true);
+		ctx.closePath();
+		ctx.fill();
+	},
+	placeTower: function() {
+		var tempTower = {
+			"x": e.pageX - canvasOffsetX,
+			"y": e.pageY - canvasOffsetY,
+			"radius":radius
+		}
+		var noRoom = false;
+		app.towers.forEach(function(tower) {
+			if(collideDetect(tempTower, tower)) {
+				noRoom = true;
+			}
+		});
+		if(app.collideDetect(tempTower, app.planet) || space) {
+			ctx.fillStyle = "rgba(228,16,16,0)";
+		} else {
+			ctx.fillStyle = "#0084ff";
+		}
 		ctx.beginPath();
 		ctx.arc(x, y, outerRadius, 0, Math.PI * 2, true);
 		ctx.closePath();
