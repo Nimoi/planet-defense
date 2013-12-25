@@ -36,14 +36,14 @@ var app = {
 		app.clearCanvas();
 		app.drawStars();
 		app.drawPlanet();
+		if(app.projectiles.length > 0) {
+			app.updateProjectiles();
+		}
 		if(app.towers.length > 0) {
 			app.updateTowers();
 		}
 		if(app.enemies.length > 0) {
 			app.updateEnemies();
-		}
-		if(app.projectiles.length > 0) {
-			app.updateProjectiles();
 		}
 	},
 	clearCanvas: function() {
@@ -80,6 +80,7 @@ var app = {
 		app.planet.y = app.height/2;
 		app.planet.radius = 100;
 		app.planet.hp = 100;
+		app.planet.team = "base";
 	},
 	drawPlanet: function() {
 		var x = app.planet.x;
@@ -149,91 +150,79 @@ var app = {
 		}, app.spawnRate);
 	},
 	updateTowers: function() {
-		for(i=0;i < app.towers.length; i++) {
+		app.towers.forEach(function(tower) {
 			ctx.fillStyle = '#0084ff';
 			ctx.beginPath();
-			ctx.arc(app.towers[i].x, app.towers[i].y, app.towers[i].radius, 0, Math.PI * 2, true);
+			ctx.arc(tower.x, tower.y, tower.radius, 0, Math.PI * 2, true);
 			ctx.closePath();
 			ctx.fill();
 
-			if(app.towers[i].target == '') {
-				app.findTarget(app.towers[i], 'creep');
+			if(tower.target == '') {
+				app.findTarget(tower, 'creep');
 				// Is target in range?
-			} else if(app.inRange(app.towers[i], app.towers[i].target)) {
+			} else if(app.inRange(tower, tower.target)) {
 				// Is target alive?
-				console.log('Target health: '+app.towers[i].target.hp);
-				if(app.towers[i].target.hp > 0) {
-					app.shootTarget(app.towers[i], app.towers[i].target);
+				if(tower.target.hp > 0) {
+					app.shootTarget(tower, tower.target);
 				} else {
-					app.findTarget(app.towers[i], 'creep');
+					app.findTarget(tower, 'creep');
 				}
 			}
-		}
+		});
 	},
 	updateEnemies: function() {
 		ctx.fillStyle = "red";
-		for(i=0; i < app.enemies.length; i++) {
-			ctx.fillRect(app.enemies[i].x, app.enemies[i].y, app.enemies[i].size, app.enemies[i].size);
+		app.enemies.forEach(function(enemy) {
+			ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
 
-			if(app.enemies[i].target == app.planet) {
-				app.findTarget(app.enemies[i], 'towers');
+			if(enemy.target == app.planet) {
+				app.findTarget(enemy, 'towers');
 			}
 
 			// Is target in range?
-			if(app.inRange(app.enemies[i], app.enemies[i].target)) {
+			if(app.inRange(enemy, enemy.target)) {
 				// Is target alive?
-				if(app.enemies[i].target.hp > 0) {
-					app.shootTarget(app.enemies[i], app.enemies[i].target);
+				if(enemy.target.hp > 0) {
+					app.shootTarget(enemy, enemy.target);
 				} else {
-					app.findTarget(app.towers[i], 'towers');
+					app.findTarget(enemy, 'towers');
 				}
 			} else {
-				app.moveTarget(app.enemies[i]);
+				app.moveTarget(enemy);
 			}
-		}
+		});
 	},
 	updateProjectiles: function() {
-		for(i=0; i < app.projectiles.length; i++) {
-			var type;
-			if(app.projectiles[i].target.team == 'player') {
-				type = app.towers;
-			} else {
-				type = app.enemies;
-			}
-			console.log('Is target in array: '+type.indexOf(app.projectiles[i].target));
-			console.log('Num projectiles: '+app.projectiles.length);
-			if(type.indexOf(app.projectiles[i].target) == -1) {
-				app.projectiles.splice(j, 1);
-				console.log('Num projectiles: '+app.projectiles.length);
-				console.log('bullet removed!');
-			}
-
-			app.moveTarget(app.projectiles[i]);
+		app.projectiles.forEach(function(projectile) {
+			app.moveTarget(projectile);
 	    	// Check collision
-	    	if(app.collideDetect(app.projectiles[i], app.projectiles[i].target)) {
+	    	if(app.collideDetect(projectile, projectile.target)) {
 		    	// Return ammo
-		    	++app.projectiles[i].owner.ammo;
+		    	++projectile.owner.ammo;
 		    	// Remove health
-		    	app.projectiles[i].target.hp -= app.projectiles[i].owner.damage;
-		    	app.checkHealth(app.projectiles[i].target);
+		    	projectile.target.hp -= projectile.owner.damage;
+		    	app.checkHealth(projectile.target);
 
 		    	// Remove projectile
-		    	app.projectiles.splice(i, 1);
+		    	projectile.active = false;
 		    } else {
 		    	// Draw projectile
-		    	if(app.projectiles[i].owner.team == 'player') {
+		    	if(projectile.owner.team == 'player') {
 				    ctx.fillStyle = '#0084ff';
 		    	} else {
 				    ctx.fillStyle = 'red';
 		    	}
-			    if (app.projectiles[i].owner.type == 'bullet') {
+			    if (projectile.owner.type == 'bullet') {
 					ctx.beginPath();
-					ctx.arc(app.projectiles[i].x, app.projectiles[i].y, app.projectiles[i].radius, 0, Math.PI * 2, true);
+					ctx.arc(projectile.x, projectile.y, projectile.radius, 0, Math.PI * 2, true);
 					ctx.closePath();
 					ctx.fill();
 			    }
 		    }
-		}
+		});
+		app.projectiles = app.projectiles.filter(function(projectile) {
+			return projectile.active;
+		});
 	},
 	moveTarget: function(unit) {
 		// Rotate us to face the target
@@ -269,7 +258,8 @@ var app = {
 					'speed':4,
 					'target':unit.target,
 					'radius':2,
-					'owner':unit
+					'owner':unit,
+					'active':true
 				});
 				--unit.ammo;
 				unit.delay = true;
@@ -300,18 +290,24 @@ var app = {
 	},
 	checkHealth: function(unit) {
 		if(unit.hp <= 0) {
-			// Remove from array
-			var type;
-			if(unit.team == 'player') {
-				type = app.towers;
-			} else {
-				type = app.enemies;
-			}
-			for(i=0;i<type.length;i++) {
-				if(unit == type[i]) {
-					type.splice(i, 1);
+			if(unit.team != 'player') {
+				var type;
+				if(unit.team == 'player') {
+					type = app.towers;
+				} else if(unit.team == 'creep') {
+					type = app.enemies;
+				} else {
+					console.log("Unidentified object shot:");
+					console.log(unit);
 				}
-			}
+				for(i=0;i<type.length;i++) {
+					if(unit == type[i]) {
+						type.splice(i, 1);
+					}
+				}
+			} else {
+				app.planet = '';
+			}	
 		}
 	},
 	// Generate a random color
