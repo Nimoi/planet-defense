@@ -183,6 +183,7 @@ var app = {
 			if(app.inRange(enemy, enemy.target)) {
 				// Is target alive?
 				if(enemy.target.hp > 0) {
+					console.log(enemy.target);
 					app.shootTarget(enemy, enemy.target);
 				} else {
 					app.findTarget(enemy, 'towers');
@@ -240,8 +241,6 @@ var app = {
 		// Loop through targettable enemies
 		for(j=0; j < enemy.length; j++) {
 			if(app.inRange(unit, enemy[j])) {
-				console.log("New target found!");
-				console.log(enemy);
 				unit.target = enemy[j];
 				break;
 			}
@@ -290,7 +289,7 @@ var app = {
 	},
 	checkHealth: function(unit) {
 		if(unit.hp <= 0) {
-			if(unit.team != 'player') {
+			if(unit.team != 'base') {
 				var type;
 				if(unit.team == 'player') {
 					type = app.towers;
@@ -306,7 +305,9 @@ var app = {
 					}
 				}
 			} else {
-				app.planet = '';
+				console.log(app.planet.hp);
+				app.planet.color1 = "rgba(0,0,0,0)";
+				app.planet.color2 = "rgba(0,0,0,0)";
 			}	
 		}
 	},
