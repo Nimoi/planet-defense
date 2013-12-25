@@ -86,8 +86,8 @@ var app = {
         }
 	},
 	initPlanet: function() {
-		app.planet.color1 = "rgba(255, 255, 255, 1)";
-		app.planet.color2 = app.randColor();
+		app.planet.shine = "rgba(255, 255, 255, 1)";
+		app.planet.style = app.randColor();
 		app.planet.x = app.width/2;
 		app.planet.y = app.height/2;
 		app.planet.radius = 100;
@@ -100,8 +100,8 @@ var app = {
 		var innerRadius = 1;
 		var outerRadius = app.planet.radius;
 		var gradient = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
-		gradient.addColorStop(0, app.planet.color1);
-		gradient.addColorStop(1, app.planet.color2);
+		gradient.addColorStop(0, app.planet.shine);
+		gradient.addColorStop(1, app.planet.style);
 		ctx.fillStyle = gradient;
 		ctx.beginPath();
 		ctx.arc(x, y, outerRadius, 0, Math.PI * 2, true);
@@ -128,7 +128,8 @@ var app = {
 			'type':'bullet',
 			'team':'player',
 			'hp':20,
-			'damage':5
+			'damage':5,
+			'style':'#0084ff'
 		});
 	},
 	// Generate enemies
@@ -154,7 +155,8 @@ var app = {
 				'type':'bullet',
 				'team':'creep',
 				'hp':10,
-				'damage':2
+				'damage':2,
+				'style':"red"
 			});
 		}
 		window.setTimeout(function() {
@@ -163,7 +165,7 @@ var app = {
 	},
 	updateTowers: function() {
 		app.towers.forEach(function(tower) {
-			ctx.fillStyle = '#0084ff';
+			ctx.fillStyle = tower.style;
 			ctx.beginPath();
 			ctx.arc(tower.x, tower.y, tower.radius, 0, Math.PI * 2, true);
 			ctx.closePath();
@@ -183,8 +185,8 @@ var app = {
 		});
 	},
 	updateEnemies: function() {
-		ctx.fillStyle = "red";
 		app.enemies.forEach(function(enemy) {
+			ctx.fillStyle = enemy.style;
 			ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
 
 			if(enemy.target == app.planet) {
@@ -195,7 +197,6 @@ var app = {
 			if(app.inRange(enemy, enemy.target)) {
 				// Is target alive?
 				if(enemy.target.hp > 0) {
-					console.log(enemy.target);
 					app.shootTarget(enemy, enemy.target);
 				} else {
 					app.findTarget(enemy, 'towers');
@@ -215,6 +216,12 @@ var app = {
 		    	// Remove health
 		    	projectile.target.hp -= projectile.owner.damage;
 		    	app.checkHealth(projectile.target);
+		    	// Flash on hit
+		    	var normalStyle = projectile.target.style;
+		    	projectile.target.style = "#fff";
+		    	window.setTimeout(function() {
+				    projectile.target.style = normalStyle;
+				}, 50);
 
 		    	// Remove projectile
 		    	projectile.active = false;
@@ -247,6 +254,8 @@ var app = {
 	findTarget: function(unit, enemy) {
 		if(enemy == 'towers') {
 			enemy = app.towers;
+			// Set target to planet in case no towers in range
+			unit.target = app.planet;
 		} else {
 			enemy = app.enemies;
 		}
@@ -318,8 +327,8 @@ var app = {
 				}
 			} else {
 				console.log(app.planet.hp);
-				app.planet.color1 = "rgba(0,0,0,0)";
-				app.planet.color2 = "rgba(0,0,0,0)";
+				app.planet.shine = "rgba(0,0,0,0)";
+				app.planet.style = "rgba(0,0,0,0)";
 			}	
 		}
 	},
