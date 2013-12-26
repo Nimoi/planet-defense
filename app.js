@@ -3,7 +3,9 @@
 * - Build and upgrade defenses
 * - Expand your planetary empire
 */
+var canvas;
 $(document).ready(function() {
+	canvas = document.getElementById('stage');
 	app.initialize();
 	$('.action-pause').on('click', function() {
 		if(app.pause == false) {
@@ -23,13 +25,13 @@ var app = {
 	towers: [],
 	enemies: [],
 	projectiles: [],
+	newTower: {},
 	spawnRate: 2000,
 	numEnemies: 1,
 	pause: false,
 	FPS:30,
 	initialize: function() {
 		// Init canvas
-		canvas = document.getElementById("stage");
 		canvas.width  = app.width;
 		canvas.height = app.height;
 		ctx = canvas.getContext("2d");
@@ -42,6 +44,13 @@ var app = {
 
 		// Start main loop
 		setInterval(app.gameLoop, 1000/app.FPS);
+	},
+	getMousePos: function(canvas, evt) {
+		var rect = canvas.getBoundingClientRect();
+		return {
+			x: evt.clientX - rect.left,
+			y: evt.clientY - rect.top
+		};
 	},
 	gameLoop: function() {
 		if(app.pause == false) {
@@ -56,6 +65,9 @@ var app = {
 			}
 			if(app.enemies.length > 0) {
 				app.updateEnemies();
+			}
+			if(app.placeNewTower == true) {
+				app.updatePlaceTower();
 			}
 		}
 	},
@@ -109,25 +121,32 @@ var app = {
 		ctx.closePath();
 		ctx.fill();
 	},
-	placeTower: function() {
-		var tempTower = {
-			"x": e.pageX - canvasOffsetX,
-			"y": e.pageY - canvasOffsetY,
-			"radius":radius
-		}
+	startPlaceTower: function() {
+		canvas.addEventListener('mousemove', function(e) {
+			var mousePos = app.getMousePos(canvas, e);
+			var radius = 10;
+			app.newTower = {
+				"x": mousePos.x,
+				"y": mousePos.y,
+				"radius":radius
+			}
+		});
+		app.placeNewTower = true;
+	},
+	updatePlaceTower: function() {
 		var noRoom = false;
 		app.towers.forEach(function(tower) {
-			if(collideDetect(tempTower, tower)) {
+			if(app.collideDetect(app.newTower, tower)) {
 				noRoom = true;
 			}
 		});
-		if(app.collideDetect(tempTower, app.planet) || space) {
-			ctx.fillStyle = "rgba(228,16,16,0)";
+		if(app.collideDetect(app.newTower, app.planet) || noRoom) {
+			ctx.fillStyle = "rgba(228,16,16,0.5)";
 		} else {
-			ctx.fillStyle = "#0084ff";
+			ctx.fillStyle = "rgba(0,132,255,0.5)";
 		}
 		ctx.beginPath();
-		ctx.arc(x, y, outerRadius, 0, Math.PI * 2, true);
+		ctx.arc(app.newTower.x, app.newTower.y, app.newTower.radius, 0, Math.PI * 2, true);
 		ctx.closePath();
 		ctx.fill();
 	},
@@ -152,7 +171,7 @@ var app = {
 			'team':'player',
 			'hp':20,
 			'damage':5,
-			'style':'#0084ff'
+			'style':'rgba(0,132,255,1)'
 		});
 	},
 	// Generate enemies
