@@ -46,7 +46,8 @@ body {
 	float: right;
 }
 .menu-main li {
-	
+	margin: 0 0 0 10px;
+	float: right;
 }
 .menu-main a {
 	color: #fff;

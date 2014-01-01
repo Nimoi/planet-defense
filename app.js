@@ -5,8 +5,10 @@
 */
 var canvas;
 $(document).ready(function() {
+	// Init app
 	canvas = document.getElementById('stage');
 	app.initialize();
+	// Pause functionality
 	$('.action-pause').on('click', function() {
 		if(app.pause == false) {
 			app.pause = true;
@@ -14,6 +16,12 @@ $(document).ready(function() {
 		} else {
 			app.pause = false;
 			$(this).html("Pause");
+		}
+	});
+	// Create tower
+	$('.action-tower').on('click', function() {
+		if(app.pause == false) {
+			app.addTower.init();
 		}
 	});
 });
@@ -67,7 +75,7 @@ var app = {
 				app.updateEnemies();
 			}
 			if(app.placeNewTower == true) {
-				app.updatePlaceTower();
+				app.addTower.updateNewTower();
 			}
 		}
 	},
@@ -123,7 +131,8 @@ var app = {
 	},
 	addTower: {
 		init: function() {
-			canvas.addEventListener('mousemove', app.addTower.updateNewTower);
+			app.placeNewTower = true;
+			canvas.addEventListener('mousemove', app.addTower.getNewPos);
 			canvas.addEventListener('click', app.addTower.placeTower);
 		},
 		getNewPos: function(e) {
@@ -148,8 +157,7 @@ var app = {
 				return false;
 			}
 		},
-		updateNewTower: function(e) {
-			app.addTower.getNewPos(e);
+		updateNewTower: function() {
 			if(app.addTower.checkNewCollide()) {
 				ctx.fillStyle = "rgba(228,16,16,0.5)";
 			} else {
@@ -166,30 +174,10 @@ var app = {
 			} else {
 				app.buildTower(app.newTower.x, app.newTower.y, 'bullet');
 				app.placeNewTower = false;
+				canvas.removeEventListener('mousemove', app.addTower.getNewPos);
+				canvas.removeEventListener('click', app.addTower.placeTower);
 			}
 		},
-	},
-	startPlaceTower: function() {
-		// MoveTower Listener
-		
-		// PlaceTower Listener
-		canvas.addEventListener('click', function(e) {
-			var mousePos = app.getMousePos(canvas, e);
-			var radius = 10;
-			var noRoom = false;
-			app.towers.forEach(function(tower) {
-				if(app.collideDetect(app.newTower, tower)) {
-					noRoom = true;
-				}
-			});
-			if(app.collideDetect(app.newTower, app.planet) || noRoom) {
-				// Error, cannot place
-			} else {
-				app.buildTower(mousePos.x, mousePos.y, 'bullet');
-				app.placeNewTower = false;
-			}
-		});
-		app.placeNewTower = true;
 	},
 	buildTower: function(x, y, type) {
 		var radius = 10;
