@@ -40,7 +40,7 @@ var app = {
 		app.initStars();
 		app.initPlanet();
 		app.spawnEnemies();
-		app.buildTower();
+		app.buildTower(438, 243, 'bullet');
 
 		// Start main loop
 		setInterval(app.gameLoop, 1000/app.FPS);
@@ -121,8 +121,12 @@ var app = {
 		ctx.closePath();
 		ctx.fill();
 	},
-	startPlaceTower: function() {
-		canvas.addEventListener('mousemove', function(e) {
+	addTower: {
+		init: function() {
+			canvas.addEventListener('mousemove', app.addTower.updateNewTower);
+			canvas.addEventListener('click', app.addTower.placeTower);
+		},
+		getNewPos: function(e) {
 			var mousePos = app.getMousePos(canvas, e);
 			var radius = 10;
 			app.newTower = {
@@ -130,30 +134,64 @@ var app = {
 				"y": mousePos.y,
 				"radius":radius
 			}
+		},
+		checkNewCollide: function() {
+			var noRoom = false;
+			app.towers.forEach(function(tower) {
+				if(app.collideDetect(app.newTower, tower)) {
+					noRoom = true;
+				}
+			});
+			if(app.collideDetect(app.newTower, app.planet) || noRoom) {
+				return true;
+			} else {
+				return false;
+			}
+		},
+		updateNewTower: function(e) {
+			app.addTower.getNewPos(e);
+			if(app.addTower.checkNewCollide()) {
+				ctx.fillStyle = "rgba(228,16,16,0.5)";
+			} else {
+				ctx.fillStyle = "rgba(0,132,255,0.5)";
+			}
+			ctx.beginPath();
+			ctx.arc(app.newTower.x, app.newTower.y, app.newTower.radius, 0, Math.PI * 2, true);
+			ctx.closePath();
+			ctx.fill();
+		},
+		placeTower: function() {
+			if(app.addTower.checkNewCollide()) {
+				// Error, cannot place
+			} else {
+				app.buildTower(app.newTower.x, app.newTower.y, 'bullet');
+				app.placeNewTower = false;
+			}
+		},
+	},
+	startPlaceTower: function() {
+		// MoveTower Listener
+		
+		// PlaceTower Listener
+		canvas.addEventListener('click', function(e) {
+			var mousePos = app.getMousePos(canvas, e);
+			var radius = 10;
+			var noRoom = false;
+			app.towers.forEach(function(tower) {
+				if(app.collideDetect(app.newTower, tower)) {
+					noRoom = true;
+				}
+			});
+			if(app.collideDetect(app.newTower, app.planet) || noRoom) {
+				// Error, cannot place
+			} else {
+				app.buildTower(mousePos.x, mousePos.y, 'bullet');
+				app.placeNewTower = false;
+			}
 		});
 		app.placeNewTower = true;
 	},
-	updatePlaceTower: function() {
-		var noRoom = false;
-		app.towers.forEach(function(tower) {
-			if(app.collideDetect(app.newTower, tower)) {
-				noRoom = true;
-			}
-		});
-		if(app.collideDetect(app.newTower, app.planet) || noRoom) {
-			ctx.fillStyle = "rgba(228,16,16,0.5)";
-		} else {
-			ctx.fillStyle = "rgba(0,132,255,0.5)";
-		}
-		ctx.beginPath();
-		ctx.arc(app.newTower.x, app.newTower.y, app.newTower.radius, 0, Math.PI * 2, true);
-		ctx.closePath();
-		ctx.fill();
-	},
-	// Generate a tower (temp)
-	buildTower: function() {
-		var x = 438;
-		var y = 243;
+	buildTower: function(x, y, type) {
 		var radius = 10;
 		var range = 50;
 		var ammo = 3;
@@ -167,7 +205,7 @@ var app = {
 			'rate':rate,
 			'delay': false,
 			'target':'',
-			'type':'bullet',
+			'type':type,
 			'team':'player',
 			'hp':20,
 			'damage':5,
