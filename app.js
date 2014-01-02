@@ -9,6 +9,10 @@ $(document).ready(function() {
 	canvas = document.getElementById('stage');
 	app.initialize();
 	// Pause functionality
+	window.addEventListener('blur', function() {
+		app.pause = true;
+		$('.action-pause').html("Play");
+	});
 	$('.action-pause').on('click', function() {
 		if(app.pause == false) {
 			app.pause = true;
@@ -135,7 +139,7 @@ var app = {
 			y: evt.clientY - rect.top
 		};
 	},
-	clickHandle: function() {
+	clickHandle: function(e) {
 		// Tower placement
 		if(app.placeNewTower) {
 			if(app.addTower.checkNewCollide()) {
@@ -146,15 +150,22 @@ var app = {
 			}
 		} else {
 		// Select tower
-			
+			var mousePos = app.getMousePos(canvas, e);
+			mousePos.size = 1;
+			app.towers.forEach(function(tower) {
+				if(app.collideDetect(mousePos, tower)) {
+					console.log("Tower clicked!");
+					app.displayTooltip(tower);
+				}
+			});
 		}
 	},
 	addTower: {
 		init: function() {
 			app.placeNewTower = true;
-			canvas.addEventListener('mousemove', app.addTower.getNewPos);
+			canvas.addEventListener('mousemove', app.addTower.setNewPos);
 		},
-		getNewPos: function(e) {
+		setNewPos: function(e) {
 			var mousePos = app.getMousePos(canvas, e);
 			var size = 10;
 			app.newTower = {
@@ -187,6 +198,9 @@ var app = {
 			ctx.closePath();
 			ctx.fill();
 		},
+	},
+	displayTooltip: function() {
+
 	},
 	buildTower: function(x, y, type) {
 		var size = 10;
