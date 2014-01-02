@@ -24,6 +24,8 @@ $(document).ready(function() {
 			app.addTower.init();
 		}
 	});
+	// Canvas Handlers
+	canvas.addEventListener('click', app.clickHandle);
 });
 var app = {
 	width: 640,
@@ -34,7 +36,7 @@ var app = {
 	enemies: [],
 	projectiles: [],
 	newTower: {},
-	spawnRate: 2000,
+	spawnRate: 0.01,
 	numEnemies: 1,
 	pause: false,
 	FPS:30,
@@ -53,13 +55,6 @@ var app = {
 		// Start main loop
 		setInterval(app.gameLoop, 1000/app.FPS);
 	},
-	getMousePos: function(canvas, evt) {
-		var rect = canvas.getBoundingClientRect();
-		return {
-			x: evt.clientX - rect.left,
-			y: evt.clientY - rect.top
-		};
-	},
 	gameLoop: function() {
 		if(app.pause == false) {
 			app.clearCanvas();
@@ -76,6 +71,9 @@ var app = {
 			}
 			if(app.placeNewTower == true) {
 				app.addTower.updateNewTower();
+			}
+			if(Math.random() < app.spawnRate) {
+				app.spawnEnemies(app.numEnemies);
 			}
 		}
 	},
@@ -109,9 +107,9 @@ var app = {
 	initPlanet: function() {
 		app.planet.shine = "rgba(255, 255, 255, 1)";
 		app.planet.style = app.randColor();
-		app.planet.x = app.width/2;
+		app.planet.x = 20;
 		app.planet.y = app.height/2;
-		app.planet.radius = 100;
+		app.planet.size = 100;
 		app.planet.hp = 100;
 		app.planet.team = "base";
 	},
@@ -119,7 +117,7 @@ var app = {
 		var x = app.planet.x;
 		var y = app.planet.y;
 		var innerRadius = 1;
-		var outerRadius = app.planet.radius;
+		var outerRadius = app.planet.size;
 		var gradient = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
 		gradient.addColorStop(0, app.planet.shine);
 		gradient.addColorStop(1, app.planet.style);
@@ -129,19 +127,40 @@ var app = {
 		ctx.closePath();
 		ctx.fill();
 	},
+	// Controls
+	getMousePos: function(canvas, evt) {
+		var rect = canvas.getBoundingClientRect();
+		return {
+			x: evt.clientX - rect.left,
+			y: evt.clientY - rect.top
+		};
+	},
+	clickHandle: function() {
+		// Tower placement
+		if(app.placeNewTower) {
+			if(app.addTower.checkNewCollide()) {
+				// Error, cannot place
+			} else {
+				app.buildTower(app.newTower.x, app.newTower.y, 'bullet');
+				app.placeNewTower = false;
+			}
+		} else {
+		// Select tower
+			
+		}
+	},
 	addTower: {
 		init: function() {
 			app.placeNewTower = true;
 			canvas.addEventListener('mousemove', app.addTower.getNewPos);
-			canvas.addEventListener('click', app.addTower.placeTower);
 		},
 		getNewPos: function(e) {
 			var mousePos = app.getMousePos(canvas, e);
-			var radius = 10;
+			var size = 10;
 			app.newTower = {
 				"x": mousePos.x,
 				"y": mousePos.y,
-				"radius":radius
+				"size":size
 			}
 		},
 		checkNewCollide: function() {
@@ -164,30 +183,20 @@ var app = {
 				ctx.fillStyle = "rgba(0,132,255,0.5)";
 			}
 			ctx.beginPath();
-			ctx.arc(app.newTower.x, app.newTower.y, app.newTower.radius, 0, Math.PI * 2, true);
+			ctx.arc(app.newTower.x, app.newTower.y, app.newTower.size, 0, Math.PI * 2, true);
 			ctx.closePath();
 			ctx.fill();
 		},
-		placeTower: function() {
-			if(app.addTower.checkNewCollide()) {
-				// Error, cannot place
-			} else {
-				app.buildTower(app.newTower.x, app.newTower.y, 'bullet');
-				app.placeNewTower = false;
-				canvas.removeEventListener('mousemove', app.addTower.getNewPos);
-				canvas.removeEventListener('click', app.addTower.placeTower);
-			}
-		},
 	},
 	buildTower: function(x, y, type) {
-		var radius = 10;
+		var size = 10;
 		var range = 50;
 		var ammo = 3;
 		var rate = 500;
 		app.towers.push({
 			'x':x,
 			'y':y,
-			'radius':radius,
+			'size':size,
 			'range':range,
 			'ammo':ammo,
 			'rate':rate,
@@ -205,7 +214,7 @@ var app = {
 		for(i=0; i < num; i++) {
 			var size = 10;
 			var x = app.width+(Math.random()*60)-10;
-			var y = app.height+(Math.random()*60)-10;
+			var y = (app.height/2)+(Math.random()*60)-10;
 			var range = 50;
 			var speed = 2;
 			var ammo = 2;
@@ -227,15 +236,12 @@ var app = {
 				'style':"red"
 			});
 		}
-		window.setTimeout(function() {
-		    app.spawnEnemies(app.numEnemies);
-		}, app.spawnRate);
 	},
 	updateTowers: function() {
 		app.towers.forEach(function(tower) {
 			ctx.fillStyle = tower.style;
 			ctx.beginPath();
-			ctx.arc(tower.x, tower.y, tower.radius, 0, Math.PI * 2, true);
+			ctx.arc(tower.x, tower.y, tower.size, 0, Math.PI * 2, true);
 			ctx.closePath();
 			ctx.fill();
 
@@ -289,7 +295,7 @@ var app = {
 		    	projectile.target.style = "#fff";
 		    	window.setTimeout(function() {
 				    projectile.target.style = normalStyle;
-				}, 50);
+				}, 25);
 
 		    	// Remove projectile
 		    	projectile.active = false;
@@ -302,7 +308,7 @@ var app = {
 		    	}
 			    if (projectile.owner.type == 'bullet') {
 					ctx.beginPath();
-					ctx.arc(projectile.x, projectile.y, projectile.radius, 0, Math.PI * 2, true);
+					ctx.arc(projectile.x, projectile.y, projectile.size, 0, Math.PI * 2, true);
 					ctx.closePath();
 					ctx.fill();
 			    }
@@ -345,7 +351,7 @@ var app = {
 					'y':unit.y,
 					'speed':4,
 					'target':unit.target,
-					'radius':2,
+					'size':2,
 					'owner':unit,
 					'active':true
 				});
@@ -361,7 +367,7 @@ var app = {
 	inRange: function(unit1, unit2) {
 		// TODO: Better method of range detection
 		var distance = Math.sqrt(Math.pow(unit1.x - unit2.x, 2) + Math.pow(unit1.y - unit2.y, 2)).toFixed(2);
-		if(distance > unit1.range) {
+		if(distance > unit1.range+unit2.size) {
 			return false;
 		} else {
 			return true;
@@ -370,7 +376,7 @@ var app = {
 	collideDetect: function(unit1, unit2) {
 		// TODO: Better collision detection. Optimize.
 		var distance = Math.sqrt(Math.pow(unit1.x - unit2.x, 2) + Math.pow(unit1.y - unit2.y, 2)).toFixed(2);
-		if(distance > 3) {
+		if(distance > unit2.size) {
 			return false;
 		} else {
 			return true;
