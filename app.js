@@ -9,10 +9,12 @@ $(document).ready(function() {
 	canvas = document.getElementById('stage');
 	app.initialize();
 	// Pause functionality
+	// Pause when window loses focus
 	window.addEventListener('blur', function() {
 		app.pause = true;
 		$('.action-pause').html("Play");
 	});
+	// Pause when user clicks "Pause" btn
 	$('.action-pause').on('click', function() {
 		if(app.pause == false) {
 			app.pause = true;
@@ -49,13 +51,10 @@ var app = {
 		canvas.width  = app.width;
 		canvas.height = app.height;
 		ctx = canvas.getContext("2d");
-
 		// Init entities
 		app.initStars();
 		app.initPlanet();
 		app.spawnEnemies();
-		app.buildTower(438, 243, 'bullet');
-
 		// Start main loop
 		setInterval(app.gameLoop, 1000/app.FPS);
 	},
@@ -64,20 +63,29 @@ var app = {
 			app.clearCanvas();
 			app.drawStars();
 			app.drawPlanet();
+			// Move projectiles
 			if(app.projectiles.length > 0) {
 				app.updateProjectiles();
 			}
+			// Display towers
 			if(app.towers.length > 0) {
 				app.updateTowers();
 			}
+			// Move enemies
 			if(app.enemies.length > 0) {
 				app.updateEnemies();
 			}
+			// Place-tower indicator
 			if(app.placeNewTower == true) {
 				app.addTower.updateNewTower();
 			}
+			// Spawn enemies
 			if(Math.random() < app.spawnRate) {
 				app.spawnEnemies(app.numEnemies);
+			}
+			// Display tooltip
+			if(app.tooltip) {
+				app.displayTooltip();
 			}
 		}
 	},
@@ -148,7 +156,7 @@ var app = {
 				app.buildTower(app.newTower.x, app.newTower.y, 'bullet');
 				app.placeNewTower = false;
 			}
-		} else {
+		} else if(!app.tooltip) {
 		// Select tower
 			var mousePos = app.getMousePos(canvas, e);
 			mousePos.size = 1;
@@ -156,8 +164,12 @@ var app = {
 				if(app.collideDetect(mousePos, tower)) {
 					console.log("Tower clicked!");
 					app.displayTooltip(tower);
+					app.tooltip = true;
 				}
 			});
+		} else {
+		// Deselect (select nothing)
+			app.tooltip = false;
 		}
 	},
 	addTower: {
@@ -199,7 +211,14 @@ var app = {
 			ctx.fill();
 		},
 	},
-	displayTooltip: function() {
+	displayTooltip: function(unit) {
+		ctx.strokeStyle = "rgba(255,255,255,0.4)";
+		ctx.lineWidth = 0.5;
+		ctx.strokeRect(0, 260, 220, 100);
+		ctx.fillStyle = "rgba(0,0,0,0.4)";
+		ctx.fillRect(0, 260, 220, 100);
+	},
+	displayHealth: function(unit) {
 
 	},
 	buildTower: function(x, y, type) {
