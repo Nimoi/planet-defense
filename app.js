@@ -12,12 +12,14 @@ $(document).ready(function() {
 	// Pause when window loses focus
 	window.addEventListener('blur', function() {
 		app.pause = true;
+		app.menus.pause();
 		$('.action-pause').html("Play");
 	});
 	// Pause when user clicks "Pause" btn
 	$('.action-pause').on('click', function() {
 		if(app.pause == false) {
 			app.pause = true;
+			app.menus.pause();
 			$(this).html("Play");
 		} else {
 			app.pause = false;
@@ -59,7 +61,7 @@ var app = {
 		setInterval(app.gameLoop, 1000/app.FPS);
 	},
 	gameLoop: function() {
-		if(app.pause == false) {
+		if(app.pause == false) { // Game is active
 			app.clearCanvas();
 			app.drawStars();
 			app.drawPlanet();
@@ -87,6 +89,26 @@ var app = {
 			if(app.tooltip) {
 				app.displayTooltip();
 			}
+		}
+	},
+	menus: {
+		pause: function() {
+			// Darken background
+			ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+			ctx.fillRect(0, 0, 640, 360);
+
+			// Draw text
+			ctx.font = "30px Helvetica";
+			ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+			var str = "PAUSED";
+			var x = (app.width/2) - (ctx.measureText(str).width/2);
+			ctx.fillText(str, x, 160);
+
+			ctx.font = "14px Helvetica";
+			ctx.fillStyle = "rgba(255, 255, 255, 1)";
+			var str = "Click to resume";
+			var x = (app.width/2) - (ctx.measureText(str).width/2);
+			ctx.fillText(str, x, 200);
 		}
 	},
 	clearCanvas: function() {
@@ -148,28 +170,32 @@ var app = {
 		};
 	},
 	clickHandle: function(e) {
-		// Tower placement
-		if(app.placeNewTower) {
-			if(app.addTower.checkNewCollide()) {
-				// Error, cannot place
-			} else {
-				app.buildTower(app.newTower.x, app.newTower.y, 'bullet');
-				app.placeNewTower = false;
-			}
-		} else if(!app.tooltip) {
-		// Select tower
-			var mousePos = app.getMousePos(canvas, e);
-			mousePos.size = 1;
-			app.towers.forEach(function(tower) {
-				if(app.collideDetect(mousePos, tower)) {
-					console.log("Tower clicked!");
-					app.displayTooltip(tower);
-					app.tooltip = true;
+		if(app.pause == false) { // Game is active
+			// Tower placement
+			if(app.placeNewTower) {
+				if(app.addTower.checkNewCollide()) {
+					// Error, cannot place
+				} else {
+					app.buildTower(app.newTower.x, app.newTower.y, 'bullet');
+					app.placeNewTower = false;
 				}
-			});
-		} else {
-		// Deselect (select nothing)
-			app.tooltip = false;
+			} else if(!app.tooltip) {
+			// Select tower
+				var mousePos = app.getMousePos(canvas, e);
+				mousePos.size = 1;
+				app.towers.forEach(function(tower) {
+					if(app.collideDetect(mousePos, tower)) {
+						console.log("Tower clicked!");
+						app.displayTooltip(tower);
+						app.tooltip = true;
+					}
+				});
+			} else { // Deselect (select nothing)
+				app.tooltip = false;
+			}
+		} else { // Game is paused
+			app.pause = false;
+			$('.action-pause').html("Pause");
 		}
 	},
 	addTower: {
@@ -183,7 +209,7 @@ var app = {
 			app.newTower = {
 				"x": mousePos.x,
 				"y": mousePos.y,
-				"size":size
+				"size": size
 			}
 		},
 		checkNewCollide: function() {
