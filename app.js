@@ -23,7 +23,7 @@ $(document).ready(function() {
 	// Create tower
 	$('.action-tower').on('click', function() {
 		if(!app.menus.pause.active) {
-			if(app.player.cash >= 20) {
+			if(app.player.cash >= 25) {
 				app.addTower.init();
 			}
 		}
@@ -330,7 +330,7 @@ var app = {
 
 	},
 	buildTower: function(x, y, type) {
-		app.player.cash -= 20;
+		app.player.cash -= 25;
 		var size = 10;
 		var range = 80;
 		var ammo = 3;
