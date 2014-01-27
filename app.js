@@ -16,7 +16,9 @@ $(document).ready(function() {
 	// TEMP MENUS
 	// Pause when user clicks "Pause" btn
 	$('.action-pause').on('click', function() {
-		app.menus.pause.toggle();
+		if(app.state.current == 'gameplay') {
+			app.menus.pause.toggle();
+		}
 	});
 	// Create tower
 	$('.action-tower').on('click', function() {
@@ -75,6 +77,7 @@ var app = {
 				if(!app.menus.pause.active) {
 					app.menus.pause.active = true;
 					app.menus.fade();
+					app.menus.pause.draw();
 					$('.action-pause').html("Play");
 				} else {
 					app.menus.pause.active = false;
@@ -106,7 +109,7 @@ var app = {
 			draw: function() {
 				// Draw text
 				ctx.font = "30px Helvetica";
-				ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+				ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
 				var str = "GAME OVER";
 				var x = (app.width/2) - (ctx.measureText(str).width/2);
 				ctx.fillText(str, x, 160);
@@ -137,7 +140,6 @@ var app = {
 				app.clearCanvas();
 				app.drawStars();
 				app.drawPlanet();
-				app.state.drawUI();
 				// Move projectiles
 				if(app.projectiles.length > 0) {
 					app.updateProjectiles();
@@ -166,6 +168,9 @@ var app = {
 				if(app.menus.gameOver.active) {
 					app.menus.fade();
 					app.menus.gameOver.draw();
+				} else {
+					// Only draw UI while game is active
+					app.state.drawUI();
 				}
 			}
 		},
@@ -179,7 +184,7 @@ var app = {
 		},
 	},
 	player: {
-		cash: 100,
+		cash: 50,
 		addCash: function(amount) {
 			app.player.cash += amount;
 		},
@@ -349,6 +354,7 @@ var app = {
 			var x = app.width+(Math.random()*60)-10;
 			var y = (app.height/2)+(Math.random()*60)-10;
 			var range = 50;
+			var vision = 80;
 			var speed = 2;
 			var ammo = 2;
 			var rate = 500; // rate between shots
@@ -358,6 +364,7 @@ var app = {
 				'size':size,
 				'speed':speed,
 				'range':range,
+				'vision':vision,
 				'ammo':ammo,
 				'rate':rate,
 				'delay': false,
@@ -468,7 +475,7 @@ var app = {
 		}
 		// Loop through targettable enemies
 		for(j=0; j < enemy.length; j++) {
-			if(app.inRange(unit, enemy[j])) {
+			if(app.inSight(unit, enemy[j])) {
 				unit.target = enemy[j];
 				break;
 			}
@@ -495,6 +502,15 @@ var app = {
 				    current.delay = false;
 				}, unit.rate);
 			}
+		}
+	},
+	inSight: function(unit1, unit2) {
+		// TODO: Better method of range detection
+		var distance = Math.sqrt(Math.pow(unit1.x - unit2.x, 2) + Math.pow(unit1.y - unit2.y, 2)).toFixed(2);
+		if(distance > unit1.vision+unit2.size) {
+			return false;
+		} else {
+			return true;
 		}
 	},
 	inRange: function(unit1, unit2) {
