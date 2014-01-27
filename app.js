@@ -332,7 +332,7 @@ var app = {
 	buildTower: function(x, y, type) {
 		app.player.cash -= 20;
 		var size = 10;
-		var range = 50;
+		var range = 80;
 		var ammo = 3;
 		var rate = 500;
 		app.towers.push({
@@ -399,6 +399,8 @@ var app = {
 				} else {
 					app.findTarget(tower, 'creep');
 				}
+			} else {
+				app.findTarget(tower, 'creep');
 			}
 		});
 	},
