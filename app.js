@@ -111,17 +111,15 @@ var app = {
 				var x = (app.width/2) - (ctx.measureText(str).width/2);
 				ctx.fillText(str, x, 160);
 			},
-			update: function() {
-				if(app.planet.hp <= 0) {
-					// End game
-					app.menus.fade();
-					app.menus.gameOver.draw();
-					if(!app.menus.gameOver.active) {
-						app.menus.gameOver.active = true;
-						window.setTimeout(function() {
-							app.state.current = 'gameover';
-						}, 3000);
-					}
+			end: function() {
+				// End game
+				app.menus.fade();
+				app.menus.gameOver.draw();
+				if(!app.menus.gameOver.active) {
+					app.menus.gameOver.active = true;
+					window.setTimeout(function() {
+						app.state.current = 'gameover';
+					}, 3000);
 				}
 			}
 		},
@@ -164,8 +162,12 @@ var app = {
 				if(app.tooltip) {
 					app.displayTooltip(); 
 				}
+				// Game Over
+				if(app.menus.gameOver.active) {
+					app.menus.fade();
+					app.menus.gameOver.draw();
+				}
 			}
-			app.menus.gameOver.update();
 		},
 		drawUI: function() {
 			ctx.font = "14px Helvetica";
@@ -178,6 +180,9 @@ var app = {
 	},
 	player: {
 		cash: 100,
+		addCash: function(amount) {
+			app.player.cash += amount;
+		},
 	},
 	clearCanvas: function() {
 		ctx.clearRect(0,0,app.width,app.height);
@@ -518,19 +523,23 @@ var app = {
 					type = app.towers;
 				} else if(unit.team == 'creep') {
 					type = app.enemies;
+					app.player.addCash(5);
 				} else {
 					console.log("Unidentified object shot:");
 					console.log(unit);
 				}
+				// Remove unit
 				for(i=0;i<type.length;i++) {
 					if(unit == type[i]) {
 						type.splice(i, 1);
 					}
 				}
 			} else {
+				// Planet
 				console.log(app.planet.hp);
 				app.planet.shine = "rgba(0,0,0,0)";
 				app.planet.style = "rgba(0,0,0,0)";
+				app.menus.gameOver.end();
 			}	
 		}
 	},
