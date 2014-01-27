@@ -1,4 +1,4 @@
-/* Planetary Defense (reverse asteroids?)
+/* Planetary Defense
 * - Defend your planets against attackers
 * - Build and upgrade defenses
 * - Expand your planetary empire
@@ -11,25 +11,19 @@ $(document).ready(function() {
 	// Pause functionality
 	// Pause when window loses focus
 	window.addEventListener('blur', function() {
-		app.pause = true;
-		app.menus.pause();
-		$('.action-pause').html("Play");
+		//app.menus.pause.activate();
 	});
+	// TEMP MENUS
 	// Pause when user clicks "Pause" btn
 	$('.action-pause').on('click', function() {
-		if(app.pause == false) {
-			app.pause = true;
-			app.menus.pause();
-			$(this).html("Play");
-		} else {
-			app.pause = false;
-			$(this).html("Pause");
-		}
+		app.menus.pause.toggle();
 	});
 	// Create tower
 	$('.action-tower').on('click', function() {
-		if(app.pause == false) {
-			app.addTower.init();
+		if(!app.menus.pause.active) {
+			if(app.player.cash >= 20) {
+				app.addTower.init();
+			}
 		}
 	});
 	// Canvas Handlers
@@ -46,7 +40,6 @@ var app = {
 	newTower: {},
 	spawnRate: 0.01,
 	numEnemies: 1,
-	pause: false,
 	FPS:30,
 	initialize: function() {
 		// Init canvas
@@ -61,55 +54,130 @@ var app = {
 		setInterval(app.gameLoop, 1000/app.FPS);
 	},
 	gameLoop: function() {
-		if(app.pause == false) { // Game is active
-			app.clearCanvas();
-			app.drawStars();
-			app.drawPlanet();
-			// Move projectiles
-			if(app.projectiles.length > 0) {
-				app.updateProjectiles();
-			}
-			// Display towers
-			if(app.towers.length > 0) {
-				app.updateTowers();
-			}
-			// Move enemies
-			if(app.enemies.length > 0) {
-				app.updateEnemies();
-			}
-			// Place-tower indicator
-			if(app.placeNewTower == true) {
-				app.addTower.updateNewTower();
-			}
-			// Spawn enemies
-			if(Math.random() < app.spawnRate) {
-				app.spawnEnemies(app.numEnemies);
-			}
-			// Display tooltip
-			if(app.tooltip) {
-				app.displayTooltip();
-			}
+		if(app.state.current == 'gameplay') {
+			app.state.gameplay();
+		} else if(app.state.current == 'gameover') {
+			app.menus.gameOver.activate();
 		}
 	},
 	menus: {
-		pause: function() {
+		pause: {
+			active: false,
+			activate: function() {
+				if(!app.menus.pause.active) {
+					app.menus.pause.active = true;
+					app.menus.fade(); 
+					app.menus.pause.draw();
+					$('.action-pause').html("Play");
+				}
+			},
+			toggle: function() {
+				if(!app.menus.pause.active) {
+					app.menus.pause.active = true;
+					app.menus.fade();
+					$('.action-pause').html("Play");
+				} else {
+					app.menus.pause.active = false;
+					$('.action-pause').html("Pause");
+				}
+			},
+			draw: function() {
+				// Draw text
+				ctx.font = "30px Helvetica";
+				ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+				var str = "PAUSED";
+				var x = (app.width/2) - (ctx.measureText(str).width/2);
+				ctx.fillText(str, x, 160);
+
+				ctx.font = "14px Helvetica";
+				ctx.fillStyle = "rgba(255, 255, 255, 1)";
+				var str = "Click to resume";
+				var x = (app.width/2) - (ctx.measureText(str).width/2);
+				ctx.fillText(str, x, 200);
+			},
+		},
+		gameOver: {
+			active: false,
+			activate: function() {
+				if(app.menus.gameOver.active) {
+					app.menus.gameOver.active = false;
+				}
+			},
+			draw: function() {
+				// Draw text
+				ctx.font = "30px Helvetica";
+				ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+				var str = "GAME OVER";
+				var x = (app.width/2) - (ctx.measureText(str).width/2);
+				ctx.fillText(str, x, 160);
+			},
+			update: function() {
+				if(app.planet.hp <= 0) {
+					// End game
+					app.menus.fade();
+					app.menus.gameOver.draw();
+					if(!app.menus.gameOver.active) {
+						app.menus.gameOver.active = true;
+						window.setTimeout(function() {
+							app.state.current = 'gameover';
+						}, 3000);
+					}
+				}
+			}
+		},
+		fade: function() {
 			// Darken background
 			ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
 			ctx.fillRect(0, 0, 640, 360);
-
-			// Draw text
-			ctx.font = "30px Helvetica";
-			ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-			var str = "PAUSED";
-			var x = (app.width/2) - (ctx.measureText(str).width/2);
-			ctx.fillText(str, x, 160);
-
+		},
+	},
+	state: {
+		current: 'gameplay',
+		gameplay: function() {
+			// Game is active
+			if(!app.menus.pause.active) {
+				app.clearCanvas();
+				app.drawStars();
+				app.drawPlanet();
+				app.state.drawUI();
+				// Move projectiles
+				if(app.projectiles.length > 0) {
+					app.updateProjectiles();
+				}
+				// Display towers
+				if(app.towers.length > 0) {
+					app.updateTowers();
+				}
+				// Move enemies
+				if(app.enemies.length > 0) {
+					app.updateEnemies();
+				}
+				// Place-tower indicator
+				if(app.placeNewTower == true) {
+					app.addTower.updateNewTower();
+				}
+				// Spawn enemies
+				if(Math.random() < app.spawnRate) {
+					app.spawnEnemies(app.numEnemies);
+				}
+				// Display tooltip
+				if(app.tooltip) {
+					app.displayTooltip(); 
+				}
+			}
+			app.menus.gameOver.update();
+		},
+		drawUI: function() {
 			ctx.font = "14px Helvetica";
 			ctx.fillStyle = "rgba(255, 255, 255, 1)";
-			var str = "Click to resume";
-			var x = (app.width/2) - (ctx.measureText(str).width/2);
-			ctx.fillText(str, x, 200);
-		}
+			var str = "$ "+app.player.cash;
+			var x = (app.width - ctx.measureText(str).width) - 10;
+			var y = 20;
+			ctx.fillText(str, x, y);
+		},
+	},
+	player: {
+		cash: 100,
 	},
 	clearCanvas: function() {
 		ctx.clearRect(0,0,app.width,app.height);
@@ -170,7 +238,7 @@ var app = {
 		};
 	},
 	clickHandle: function(e) {
-		if(app.pause == false) { // Game is active
+		if(!app.menus.pause.active) { // Game is active
 			// Tower placement
 			if(app.placeNewTower) {
 				if(app.addTower.checkNewCollide()) {
@@ -194,7 +262,7 @@ var app = {
 				app.tooltip = false;
 			}
 		} else { // Game is paused
-			app.pause = false;
+			app.menus.pause.active = false;
 			$('.action-pause').html("Pause");
 		}
 	},
@@ -248,6 +316,7 @@ var app = {
 
 	},
 	buildTower: function(x, y, type) {
+		app.player.cash -= 20;
 		var size = 10;
 		var range = 50;
 		var ammo = 3;
