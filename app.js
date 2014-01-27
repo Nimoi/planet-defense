@@ -59,29 +59,33 @@ var app = {
 		if(app.state.current == 'gameplay') {
 			app.state.gameplay();
 		} else if(app.state.current == 'gameover') {
-			app.menus.gameOver.activate();
+			app.state.gameplay();
 		}
 	},
 	menus: {
 		pause: {
 			active: false,
 			activate: function() {
-				if(!app.menus.pause.active) {
-					app.menus.pause.active = true;
-					app.menus.fade(); 
-					app.menus.pause.draw();
-					$('.action-pause').html("Play");
+				if(app.state.current == 'gameplay') {
+					if(!app.menus.pause.active) {
+						app.menus.pause.active = true;
+						app.menus.fade(); 
+						app.menus.pause.draw();
+						$('.action-pause').html("Play");
+					}
 				}
 			},
 			toggle: function() {
-				if(!app.menus.pause.active) {
-					app.menus.pause.active = true;
-					app.menus.fade();
-					app.menus.pause.draw();
-					$('.action-pause').html("Play");
-				} else {
-					app.menus.pause.active = false;
-					$('.action-pause').html("Pause");
+				if(app.state.current == 'gameplay') {
+					if(!app.menus.pause.active) {
+						app.menus.pause.active = true;
+						app.menus.fade();
+						app.menus.pause.draw();
+						$('.action-pause').html("Play");
+					} else {
+						app.menus.pause.active = false;
+						$('.action-pause').html("Pause");
+					}
 				}
 			},
 			draw: function() {
@@ -102,8 +106,9 @@ var app = {
 		gameOver: {
 			active: false,
 			activate: function() {
-				if(app.menus.gameOver.active) {
-					app.menus.gameOver.active = false;
+				if(!app.menus.gameOver.active) {
+					app.menus.gameOver.active = true;
+					app.state.current = 'gameover';
 				}
 			},
 			draw: function() {
@@ -118,18 +123,12 @@ var app = {
 				// End game
 				app.menus.fade();
 				app.menus.gameOver.draw();
-				if(!app.menus.gameOver.active) {
-					app.menus.gameOver.active = true;
-					window.setTimeout(function() {
-						app.state.current = 'gameover';
-					}, 3000);
-				}
 			}
 		},
 		fade: function() {
 			// Darken background
 			ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-			ctx.fillRect(0, 0, 640, 360);
+			ctx.fillRect(0, 0, app.width, app.height);
 		},
 	},
 	state: {
@@ -157,8 +156,10 @@ var app = {
 					app.addTower.updateNewTower();
 				}
 				// Spawn enemies
-				if(Math.random() < app.spawnRate) {
-					app.spawnEnemies(app.numEnemies);
+				if(!app.menus.gameOver.active) {
+					if(Math.random() < app.spawnRate) {
+						app.spawnEnemies(app.numEnemies);
+					}
 				}
 				// Display tooltip
 				if(app.tooltip) {
@@ -166,12 +167,15 @@ var app = {
 				}
 				// Game Over
 				if(app.menus.gameOver.active) {
-					app.menus.fade();
-					app.menus.gameOver.draw();
+					app.menus.gameOver.end();
 				} else {
 					// Only draw UI while game is active
 					app.state.drawUI();
 				}
+			}
+
+			if(app.planet.hp <= 0) {
+				app.menus.gameOver.activate();
 			}
 		},
 		drawUI: function() {
@@ -435,6 +439,7 @@ var app = {
 		    	projectile.target.style = "#fff";
 		    	window.setTimeout(function() {
 				    projectile.target.style = normalStyle;
+				    console.log(projectile.target);
 				}, 25);
 
 		    	// Remove projectile
@@ -555,7 +560,6 @@ var app = {
 				console.log(app.planet.hp);
 				app.planet.shine = "rgba(0,0,0,0)";
 				app.planet.style = "rgba(0,0,0,0)";
-				app.menus.gameOver.end();
 			}	
 		}
 	},
