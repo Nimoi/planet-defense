@@ -73,13 +73,14 @@ var app = {
 				draw: function() {
 					var context = app.menus.gameplay.towers;
 					// Menu background
-					ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+					ctx.fillStyle = "rgba(25, 25, 25, 0.5)";
 					ctx.fillRect(0, 0, app.width, context.height);
+					// Menu border
 					ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
 					ctx.fillRect(0, context.height, app.width, 1);
 
 					// Display cash
-					ctx.font = "bold 14px Helvetica";
+					ctx.font = "bold 16px Helvetica";
 					ctx.fillStyle = "#F9E873";
 					var str = "$ "+app.player.cash;
 					var x = 10;
@@ -88,15 +89,15 @@ var app = {
 					
 					for(i=0;i < context.buttons.length;i++) {
 						// Draw default tower
-						// TODO - add switch for other types
+						// TODO - add switch for other towers
 						// Button Background
 						var width = 40;
-						ctx.fillStyle = "#101010";
+						ctx.fillStyle = "rgba(45, 45, 45, 0.5)";
 						ctx.fillRect(context.buttons[i].boundx, 
 							context.buttons[i].boundy, 
 							context.buttons[i].boundw, 
 							context.buttons[i].boundh);
-						// Preview
+						// Preview tower
 						if(app.player.cash >= context.buttons[i].price) {
 							ctx.fillStyle = 'rgba(0,132,255,1)';
 						} else {
@@ -112,7 +113,7 @@ var app = {
 						} else {
 							ctx.fillStyle = 'rgba(230, 230, 230, 0.7)';
 						}
-						ctx.font = "12px Helvetica";
+						ctx.font = "10px Helvetica";
 						var str = "$"+context.buttons[i].price;
 						var x = context.buttons[i].x - (ctx.measureText(str).width/2);
 						var y = context.buttons[i].y + context.buttons[i].size + 12;
@@ -231,7 +232,6 @@ var app = {
 					app.menus.gameplay.towers.draw();
 				}
 			}
-
 			if(app.planet.hp <= 0) {
 				app.menus.gameOver.activate();
 			}
@@ -310,17 +310,19 @@ var app = {
 	},
 	clickHandle: function(e) {
 		if(!app.menus.pause.active) { // Game is active
+			// Get mouse position
+			var mousePos = app.getMousePos(canvas, e);
+			mousePos.size = 1;
+			console.log(mousePos);
 			// Tower placement
 			if(app.placeNewTower) {
-				if(!app.addTower.checkNewCollide()) {
-					app.buildTower(app.newTower.x, app.newTower.y, 'bullet');
-					app.placeNewTower = false;
+				if(mousePos.y > app.menus.gameplay.towers.height) {
+					if(!app.addTower.checkNewCollide()) {
+						app.buildTower(app.newTower.x, app.newTower.y, 'bullet');
+						app.placeNewTower = false;
+					}
 				}
 			} else {
-				// Get mouse position
-				var mousePos = app.getMousePos(canvas, e);
-				mousePos.size = 1;
-				console.log(mousePos);
 				// Display tooltips
 				if(!app.tooltip) {
 					// Select tower
@@ -334,7 +336,7 @@ var app = {
 				} else { // Deselect (select nothing)
 					app.tooltip = false;
 				}
-				if(mousePos.y <= 40) { // Clicked on Menu
+				if(mousePos.y <= app.menus.gameplay.towers.height) { // Clicked on Menu
 					var current = app.menus.gameplay.towers;
 					var x1 = current.buttons[0].boundx;
 					var x2 = x1 + current.buttons[0].boundw;
@@ -383,15 +385,17 @@ var app = {
 			}
 		},
 		updateNewTower: function() {
-			if(app.addTower.checkNewCollide()) {
-				ctx.fillStyle = "rgba(228,16,16,0.5)";
-			} else {
-				ctx.fillStyle = "rgba(0,132,255,0.5)";
+			if(app.newTower.y > app.menus.gameplay.towers.height) {
+				if(app.addTower.checkNewCollide()) {
+					ctx.fillStyle = "rgba(228,16,16,0.5)";
+				} else {
+					ctx.fillStyle = "rgba(0,132,255,0.5)";
+				}
+				ctx.beginPath();
+				ctx.arc(app.newTower.x, app.newTower.y, app.newTower.size, 0, Math.PI * 2, true);
+				ctx.closePath();
+				ctx.fill();
 			}
-			ctx.beginPath();
-			ctx.arc(app.newTower.x, app.newTower.y, app.newTower.size, 0, Math.PI * 2, true);
-			ctx.closePath();
-			ctx.fill();
 		},
 	},
 	displayTooltip: function(unit) {
@@ -476,6 +480,10 @@ var app = {
 				}
 			} else {
 				app.findTarget(tower, 'creep');
+			}
+
+			if(tower.showHealth) {
+				// Display health
 			}
 		});
 	},
