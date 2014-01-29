@@ -2,6 +2,7 @@
 * - Defend your planets against attackers
 * - Build and upgrade defenses
 * - Expand your planetary empire
+* 
 */
 var canvas;
 $(document).ready(function() {
@@ -23,9 +24,7 @@ $(document).ready(function() {
 	// Create tower
 	$('.action-tower').on('click', function() {
 		if(!app.menus.pause.active) {
-			if(app.player.cash >= 25) {
-				app.addTower.init();
-			}
+			app.addTower.init();
 		}
 	});
 	// Canvas Handlers
@@ -55,14 +54,71 @@ var app = {
 		// Start main loop
 		setInterval(app.gameLoop, 1000/app.FPS);
 	},
-	gameLoop: function() {
-		if(app.state.current == 'gameplay') {
-			app.state.gameplay();
-		} else if(app.state.current == 'gameover') {
-			app.state.gameplay();
-		}
-	},
 	menus: {
+		gameplay: {
+			towers: {
+				height: 40,
+				buttons: [{
+						x: 100,
+						y: 13,
+						size: 10,
+						boundx: 80,
+						boundy: 0,
+						boundw: 40,
+						boundh: 40,
+						name: 'Gunner',
+						price: 25,
+					},
+				],
+				draw: function() {
+					var context = app.menus.gameplay.towers;
+					// Menu background
+					ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+					ctx.fillRect(0, 0, app.width, context.height);
+
+					// Display cash
+					ctx.font = "bold 14px Helvetica";
+					ctx.fillStyle = "#F9E873";
+					var str = "$ "+app.player.cash;
+					var x = 10;
+					var y = 25;
+					ctx.fillText(str, x, y);
+					
+					for(i=0;i < context.buttons.length;i++) {
+						// Draw default tower
+						// TODO - add switch for other types
+						// Button Background
+						var width = 40;
+						ctx.fillStyle = "#101010";
+						ctx.fillRect(context.buttons[i].boundx, 
+							context.buttons[i].boundy, 
+							context.buttons[i].boundw, 
+							context.buttons[i].boundh);
+						// Preview
+						if(app.player.cash >= context.buttons[i].price) {
+							ctx.fillStyle = 'rgba(0,132,255,1)';
+						} else {
+							ctx.fillStyle = 'rgba(200,200,200,0.7)';
+						}
+						ctx.beginPath();
+						ctx.arc(context.buttons[i].x, context.buttons[i].y, context.buttons[i].size, 0, Math.PI * 2, true);
+						ctx.closePath();
+						ctx.fill();
+						// Draw price
+						if(app.player.cash >= context.buttons[i].price) {
+							ctx.fillStyle = "rgba(255, 255, 255, 1)";
+						} else {
+							ctx.fillStyle = 'rgba(230, 230, 230, 0.7)';
+						}
+						ctx.font = "12px Helvetica";
+						var str = "$"+context.buttons[i].price;
+						var x = context.buttons[i].x - (ctx.measureText(str).width/2);
+						var y = context.buttons[i].y + context.buttons[i].size + 12;
+						ctx.fillText(str, x, y);
+					};
+				},
+			},
+		},
 		pause: {
 			active: false,
 			activate: function() {
@@ -170,7 +226,7 @@ var app = {
 					app.menus.gameOver.end();
 				} else {
 					// Only draw UI while game is active
-					app.state.drawUI();
+					app.menus.gameplay.towers.draw();
 				}
 			}
 
@@ -178,20 +234,19 @@ var app = {
 				app.menus.gameOver.activate();
 			}
 		},
-		drawUI: function() {
-			ctx.font = "14px Helvetica";
-			ctx.fillStyle = "rgba(255, 255, 255, 1)";
-			var str = "$ "+app.player.cash;
-			var x = (app.width - ctx.measureText(str).width) - 10;
-			var y = 20;
-			ctx.fillText(str, x, y);
-		},
 	},
 	player: {
 		cash: 50,
 		addCash: function(amount) {
 			app.player.cash += amount;
 		},
+	},
+	gameLoop: function() {
+		if(app.state.current == 'gameplay') {
+			app.state.gameplay();
+		} else if(app.state.current == 'gameover') {
+			app.state.gameplay();
+		}
 	},
 	clearCanvas: function() {
 		ctx.clearRect(0,0,app.width,app.height);
@@ -255,25 +310,41 @@ var app = {
 		if(!app.menus.pause.active) { // Game is active
 			// Tower placement
 			if(app.placeNewTower) {
-				if(app.addTower.checkNewCollide()) {
-					// Error, cannot place
-				} else {
+				if(!app.addTower.checkNewCollide()) {
 					app.buildTower(app.newTower.x, app.newTower.y, 'bullet');
 					app.placeNewTower = false;
 				}
-			} else if(!app.tooltip) {
-			// Select tower
+			} else {
+				// Get mouse position
 				var mousePos = app.getMousePos(canvas, e);
 				mousePos.size = 1;
-				app.towers.forEach(function(tower) {
-					if(app.collideDetect(mousePos, tower)) {
-						console.log("Tower clicked!");
-						app.displayTooltip(tower);
-						app.tooltip = true;
+				console.log(mousePos);
+				// Display tooltips
+				if(!app.tooltip) {
+					// Select tower
+					app.towers.forEach(function(tower) {
+						if(app.collideDetect(mousePos, tower)) {
+							console.log("Tower clicked!");
+							app.displayTooltip(tower);
+							app.tooltip = true;
+						}
+					});
+				} else { // Deselect (select nothing)
+					app.tooltip = false;
+				}
+				if(mousePos.y <= 40) { // Clicked on Menu
+					var current = app.menus.gameplay.towers;
+					var x1 = current.buttons[0].boundx;
+					var x2 = x1 + current.buttons[0].boundw;
+					var y1 = current.buttons[0].boundy;
+					var y2 = y1 + current.buttons[0].boundh;
+					if(mousePos.x > x1 && mousePos.x < x2) {
+						if(mousePos.y > y1 && mousePos.y < y2) {
+							// Add Tower
+							app.addTower.init();
+						}
 					}
-				});
-			} else { // Deselect (select nothing)
-				app.tooltip = false;
+				}
 			}
 		} else { // Game is paused
 			app.menus.pause.active = false;
@@ -282,8 +353,10 @@ var app = {
 	},
 	addTower: {
 		init: function() {
-			app.placeNewTower = true;
-			canvas.addEventListener('mousemove', app.addTower.setNewPos);
+			if(app.player.cash >= 25) {
+				app.placeNewTower = true;
+				canvas.addEventListener('mousemove', app.addTower.setNewPos);
+			}
 		},
 		setNewPos: function(e) {
 			var mousePos = app.getMousePos(canvas, e);
@@ -441,7 +514,6 @@ var app = {
 		    	projectile.target.style = "#fff";
 		    	window.setTimeout(function() {
 				    projectile.target.style = normalStyle;
-				    console.log(projectile.target);
 				}, 25);
 
 		    	// Remove projectile
@@ -546,7 +618,7 @@ var app = {
 					type = app.towers;
 				} else if(unit.team == 'creep') {
 					type = app.enemies;
-					app.player.addCash(5);
+					app.player.addCash(2);
 				} else {
 					console.log("Unidentified object shot:");
 					console.log(unit);
