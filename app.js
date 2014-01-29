@@ -75,6 +75,8 @@ var app = {
 					// Menu background
 					ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
 					ctx.fillRect(0, 0, app.width, context.height);
+					ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+					ctx.fillRect(0, context.height, app.width, 1);
 
 					// Display cash
 					ctx.font = "bold 14px Helvetica";
