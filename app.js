@@ -60,13 +60,13 @@ var app = {
 				height: 40,
 				buttons: [{
 						x: 100,
-						y: 13,
-						size: 10,
+						y: 10,
+						size: 12,
 						boundx: 80,
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
-						name: 'Gunner',
+						name: 'basic',
 						price: 25,
 					},
 				],
@@ -82,7 +82,12 @@ var app = {
 					// Display cash
 					ctx.font = "bold 16px Helvetica";
 					ctx.fillStyle = "#F9E873";
-					var str = "$ "+app.player.cash;
+					if(app.player.cash < 1000) {
+						var str = "$ "+app.player.cash+"mil";
+					} else {
+						var numbil = app.player.cash*0.001;
+						var str = "$ "+numbil.toFixed(1)+"bil";
+					}
 					var x = 10;
 					var y = 25;
 					ctx.fillText(str, x, y);
@@ -103,10 +108,8 @@ var app = {
 						} else {
 							ctx.fillStyle = 'rgba(200,200,200,0.7)';
 						}
-						ctx.beginPath();
-						ctx.arc(context.buttons[i].x, context.buttons[i].y, context.buttons[i].size, 0, Math.PI * 2, true);
-						ctx.closePath();
-						ctx.fill();
+						var x = context.buttons[i].x - context.buttons[i].size*0.5; // Center preview
+						ctx.fillRect(x, context.buttons[i].y, context.buttons[i].size, context.buttons[i].size);
 						// Draw price
 						if(app.player.cash >= context.buttons[i].price) {
 							ctx.fillStyle = "rgba(255, 255, 255, 1)";
@@ -220,7 +223,7 @@ var app = {
 						app.spawnEnemies(app.numEnemies);
 						if(Math.random() < 0.5) {
 							app.spawnRate += 0.001;
-							ntils.colorLog("Spawn rate: "+app.spawnRate, "#0084ff");
+							ntils.colorLog("Spawn rate: "+app.spawnRate, "orangered");
 						}
 					}
 				}
@@ -322,7 +325,7 @@ var app = {
 			if(app.placeNewTower) {
 				if(mousePos.y > app.menus.gameplay.towers.height) {
 					if(!app.addTower.checkNewCollide()) {
-						app.buildTower(app.newTower.x, app.newTower.y, 'bullet');
+						app.buildTower(app.newTower.x, app.newTower.y, 'basic');
 						app.placeNewTower = false;
 					}
 				}
@@ -368,7 +371,7 @@ var app = {
 		},
 		setNewPos: function(e) {
 			var mousePos = app.getMousePos(canvas, e);
-			var size = 10;
+			var size = 12;
 			app.newTower = {
 				"x": mousePos.x,
 				"y": mousePos.y,
@@ -411,11 +414,15 @@ var app = {
 
 	},
 	buildTower: function(x, y, type) {
-		app.player.cash -= 25;
-		var size = 10;
-		var range = 80;
-		var ammo = 3;
-		var rate = 500;
+		if(type == 'basic') {
+			app.player.cash -= 25;
+			var size = 12;
+			var range = 80;
+			var ammo = 3;
+			var rate = 500;
+			var hp = 20;
+			var damage = 5;
+		}
 		app.towers.push({
 			'x':x,
 			'y':y,
@@ -427,8 +434,8 @@ var app = {
 			'target':'',
 			'type':type,
 			'team':'player',
-			'hp':20,
-			'damage':5,
+			'hp':hp,
+			'damage':damage,
 			'style':'rgba(0,132,255,1)'
 		});
 	},
@@ -454,7 +461,7 @@ var app = {
 				'rate':rate,
 				'delay': false,
 				'target':app.planet,
-				'type':'bullet',
+				'type':'basic',
 				'team':'creep',
 				'hp':10,
 				'damage':2,
@@ -559,7 +566,7 @@ var app = {
 		    	} else {
 				    ctx.fillStyle = 'red';
 		    	}
-			    if (projectile.owner.type == 'bullet') {
+			    if (projectile.owner.type == 'basic') {
 					ctx.beginPath();
 					ctx.arc(projectile.x, projectile.y, projectile.size, 0, Math.PI * 2, true);
 					ctx.closePath();
