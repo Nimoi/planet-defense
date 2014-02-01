@@ -218,6 +218,10 @@ var app = {
 				if(!app.menus.gameOver.active) {
 					if(Math.random() < app.spawnRate) {
 						app.spawnEnemies(app.numEnemies);
+						if(Math.random() < 0.5) {
+							app.spawnRate += 0.001;
+							ntils.colorLog("Spawn rate: "+app.spawnRate, "#0084ff");
+						}
 					}
 				}
 				// Display tooltip
@@ -391,10 +395,8 @@ var app = {
 				} else {
 					ctx.fillStyle = "rgba(0,132,255,0.5)";
 				}
-				ctx.beginPath();
-				ctx.arc(app.newTower.x, app.newTower.y, app.newTower.size, 0, Math.PI * 2, true);
-				ctx.closePath();
-				ctx.fill();
+				ctx.fillStyle = app.newTower.style;
+				ctx.fillRect(app.newTower.x, app.newTower.y, app.newTower.size, app.newTower.size);
 			}
 		},
 	},
@@ -462,12 +464,25 @@ var app = {
 	},
 	updateTowers: function() {
 		app.towers.forEach(function(tower) {
-			ctx.fillStyle = tower.style;
-			ctx.beginPath();
-			ctx.arc(tower.x, tower.y, tower.size, 0, Math.PI * 2, true);
-			ctx.closePath();
-			ctx.fill();
+			// ctx.beginPath();
+			// ctx.arc(tower.x, tower.y, tower.size, 0, Math.PI * 2, true);
+			// ctx.closePath();
+			// ctx.fill();
 
+			// Draw Tower
+			ctx.save();
+			var transx = tower.x + 0.5*tower.size;
+			var transy = tower.y + 0.5*tower.size;
+			ctx.translate(transx, transy);
+			var rotation = Math.atan2(tower.target.y - tower.y, tower.target.x - tower.x);
+			// * (180 / Math.PI) //rads
+			ctx.rotate(rotation);
+			ctx.fillStyle = tower.style;
+			ctx.translate(-transx, -transy);
+			ctx.fillRect(tower.x, tower.y, tower.size, tower.size);
+			ctx.restore();
+
+			// Tower AI
 			if(tower.target == '') {
 				app.findTarget(tower, 'creep');
 				// Is target in range?
@@ -489,11 +504,20 @@ var app = {
 	},
 	updateEnemies: function() {
 		app.enemies.forEach(function(enemy) {
+			ctx.save();
+			var transx = enemy.x + 0.5*enemy.size;
+			var transy = enemy.y + 0.5*enemy.size;
+			ctx.translate(transx, transy);
+			var rotation = Math.atan2(enemy.target.y - enemy.y, enemy.target.x - enemy.x);
+			// * (180 / Math.PI) //rads
+			ctx.rotate(rotation);
 			ctx.fillStyle = enemy.style;
+			ctx.translate(-transx, -transy);
 			ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+			ctx.restore();
 
 			if(enemy.target == app.planet) {
-				app.findTarget(enemy, 'towers');
+				// app.findTarget(enemy, 'towers');
 			}
 
 			// Is target in range?
@@ -554,18 +578,18 @@ var app = {
 	    unit.x += Math.cos(rotation) * unit.speed;
 	    unit.y += Math.sin(rotation) * unit.speed;
 	},
-	findTarget: function(unit, enemy) {
-		if(enemy == 'towers') {
-			enemy = app.towers;
+	findTarget: function(unit, target) {
+		if(target == 'towers') {
+			target = app.towers;
 			// Set target to planet in case no towers in range
 			unit.target = app.planet;
 		} else {
-			enemy = app.enemies;
+			target = app.enemies;
 		}
 		// Loop through targettable enemies
-		for(j=0; j < enemy.length; j++) {
-			if(app.inSight(unit, enemy[j])) {
-				unit.target = enemy[j];
+		for(j=0; j < target.length; j++) {
+			if(app.inSight(unit, target[j])) {
+				unit.target = target[j];
 				break;
 			}
 		}
@@ -580,7 +604,7 @@ var app = {
 					'y':unit.y,
 					'speed':4,
 					'target':unit.target,
-					'size':2,
+					'size':1.5,
 					'owner':unit,
 					'active':true
 				});
@@ -650,5 +674,38 @@ var app = {
 	// Generate a random color
 	randColor: function() {
 		return '#'+ ('000000' + Math.floor(Math.random()*16777215).toString(16)).slice(-6);
+	},
+	test: function() {
+		var x = 100;
+		var y = 100;
+		var w = 100;
+		var h = 100;
+		var tx = 250;
+		var ty = 250;
+		if(testrotate) {
+			ctx.save();
+			var transx = x + 0.5*w;
+			var transy = y + 0.5*h;
+			ctx.translate(transx, transy);
+			console.log('translate x: '+transx);
+			console.log('translate y: '+transy);
+			var rotation = Math.atan2(ty - y, tx - x);
+			ctx.rotate(rotation);
+			ctx.fillStyle = "#fff";
+			ctx.translate(-transx, -transy);
+			ctx.fillRect(x, y, w, h);
+			ctx.restore();
+		} else {
+			ctx.fillStyle = "#fff";
+			ctx.fillRect(x, y, w, h);
+		}
+	}
+}
+
+var testrotate = false;
+
+ntils = {
+	colorLog: function(msg, color) {
+		console.log("%c" + msg, "color:" + color + ";font-weight:bold;");
 	}
 }
