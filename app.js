@@ -42,6 +42,7 @@ var app = {
 	spawnRate: 0.01,
 	numEnemies: 1,
 	FPS:30,
+	mode:'normal', // Hard mode enables enemies to attack towers
 	initialize: function() {
 		// Init canvas
 		canvas.width  = app.width;
@@ -325,7 +326,7 @@ var app = {
 			if(app.placeNewTower) {
 				if(mousePos.y > app.menus.gameplay.towers.height) {
 					if(!app.addTower.checkNewCollide()) {
-						app.buildTower(app.newTower.x, app.newTower.y, 'basic');
+						app.buildTower(app.newTower.x, app.newTower.y, 'laser');
 						app.placeNewTower = false;
 					}
 				}
@@ -422,6 +423,16 @@ var app = {
 			var rate = 500;
 			var hp = 20;
 			var damage = 5;
+			var image;
+		}
+		if(type == 'laser') {
+			var size = 10;
+			var range = 60;
+			var ammo = -1;
+			var rate = 100;
+			var hp = 15;
+			var damage = 1;
+			var image;
 		}
 		app.towers.push({
 			'x':x,
@@ -436,7 +447,8 @@ var app = {
 			'team':'player',
 			'hp':hp,
 			'damage':damage,
-			'style':'rgba(0,132,255,1)'
+			'style':'rgba(0,132,255,1)',
+			'image':image
 		});
 	},
 	// Generate enemies
@@ -496,7 +508,7 @@ var app = {
 			} else if(app.inRange(tower, tower.target)) {
 				// Is target alive?
 				if(tower.target.hp > 0) {
-					app.shootTarget(tower, tower.target);
+					app.shootTarget(tower);
 				} else {
 					app.findTarget(tower, 'creep');
 				}
@@ -531,7 +543,7 @@ var app = {
 			if(app.inRange(enemy, enemy.target)) {
 				// Is target alive?
 				if(enemy.target.hp > 0) {
-					app.shootTarget(enemy, enemy.target);
+					app.shootTarget(enemy);
 				} else {
 					app.findTarget(enemy, 'towers');
 				}
@@ -542,36 +554,61 @@ var app = {
 	},
 	updateProjectiles: function() {
 		app.projectiles.forEach(function(projectile) {
-			app.moveTarget(projectile);
-	    	// Check collision
-	    	if(app.collideDetect(projectile, projectile.target)) {
-		    	// Return ammo
-		    	++projectile.owner.ammo;
-		    	// Remove health
-		    	projectile.target.hp -= projectile.owner.damage;
-		    	app.checkHealth(projectile.target);
-		    	// Flash on hit
-		    	var normalStyle = projectile.target.style;
-		    	projectile.target.style = "#fff";
-		    	window.setTimeout(function() {
-				    projectile.target.style = normalStyle;
-				}, 25);
+			if(projectile.owner.type == 'basic') {
+				app.moveTarget(projectile);
+		    	// Check collision
+		    	if(app.collideDetect(projectile, projectile.target)) {
+			    	// Return ammo
+			    	++projectile.owner.ammo;
+			    	// Remove health
+			    	projectile.target.hp -= projectile.owner.damage;
+			    	app.checkHealth(projectile.target);
+			    	// Flash on hit
+			    	var normalStyle = projectile.target.style;
+			    	projectile.target.style = "#fff";
+			    	window.setTimeout(function() {
+					    projectile.target.style = normalStyle;
+					}, 25);
 
-		    	// Remove projectile
-		    	projectile.active = false;
-		    } else {
-		    	// Draw projectile
-		    	if(projectile.owner.team == 'player') {
-				    ctx.fillStyle = '#0084ff';
-		    	} else {
-				    ctx.fillStyle = 'red';
-		    	}
-			    if (projectile.owner.type == 'basic') {
-					ctx.beginPath();
-					ctx.arc(projectile.x, projectile.y, projectile.size, 0, Math.PI * 2, true);
-					ctx.closePath();
-					ctx.fill();
+			    	// Remove projectile
+			    	projectile.active = false;
+			    } else {
+			    	// Draw projectile
+			    	if(projectile.owner.team == 'player') {
+					    ctx.fillStyle = '#0084ff';
+			    	} else {
+					    ctx.fillStyle = 'red';
+			    	}
+				    if (projectile.owner.type == 'basic') {
+						ctx.beginPath();
+						ctx.arc(projectile.x, projectile.y, projectile.size, 0, Math.PI * 2, true);
+						ctx.closePath();
+						ctx.fill();
+				    }
 			    }
+		    } else if(projectile.owner.type == 'laser') {
+		    	if(projectile.target.hp > 0) {
+			    	ctx.lineWidth = 1;
+					ctx.strokeStyle = '#0084ff';
+					ctx.beginPath();
+					var oX = projectile.owner.x + projectile.owner.size/2;
+					var oY = projectile.owner.y + projectile.owner.size/2;
+					var tX = projectile.target.x + projectile.target.size/2;
+					var tY = projectile.target.y + projectile.target.size/2;
+			    	ctx.moveTo(oX,oY);
+			    	ctx.lineTo(tX,tY);
+			    	ctx.stroke();
+			    	var laserPerams = {
+			    		ownerX: oX,
+			    		ownerY: oY,
+			    		targetX: tX,
+			    		targetY: tY
+			    	}
+			    	console.log(laserPerams);
+		    	} else {
+			    	// reset delay allowing laser tower to shoot again
+			    	projectile.owner.delay = false;
+		    	}
 		    }
 		});
 		app.projectiles = app.projectiles.filter(function(projectile) {
@@ -604,12 +641,32 @@ var app = {
 	shootTarget: function(unit) {
 		// console.log(unit.ammo);
 		// console.log(unit.delay);
-		if(unit.ammo > 0) {
+		if(unit.type == 'basic') {
+			if(unit.ammo > 0) {
+				if(!unit.delay) {
+					app.projectiles.push({
+						'x':unit.x,
+						'y':unit.y,
+						'speed':4,
+						'target':unit.target,
+						'size':1.5,
+						'owner':unit,
+						'active':true
+					});
+					--unit.ammo;
+					unit.delay = true;
+					var current = unit;
+					window.setTimeout(function() {
+					    current.delay = false;
+					}, unit.rate);
+				}
+			}
+		} else if(unit.type == 'laser') {
 			if(!unit.delay) {
 				app.projectiles.push({
 					'x':unit.x,
 					'y':unit.y,
-					'speed':4,
+					'speed':1,
 					'target':unit.target,
 					'size':1.5,
 					'owner':unit,
@@ -623,6 +680,7 @@ var app = {
 				}, unit.rate);
 			}
 		}
+		
 	},
 	inSight: function(unit1, unit2) {
 		// TODO: Better method of range detection
