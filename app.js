@@ -103,8 +103,8 @@ var app = {
 					var x = 10;
 					var y = 25;
 					ctx.fillText(str, x, y);
+					// Display buttons
 					for(i=0;i < context.buttons.length;i++) {
-						// Display buttons
 						// Button Background
 						var width = 40;
 						ctx.fillStyle = "rgba(45, 45, 45, 0.5)";
@@ -136,9 +136,40 @@ var app = {
 					};
 				},
 			},
+			timer: {
+				startTime: Date.now(),
+				elapsedTime: function() {
+					var time = Date.now() - app.menus.gameplay.timer.startTime - app.menus.pause.elapsedTime;
+					var s = time/1000;
+					var str = "";
+					if (s > 86400) {
+						str = ~~(s/86400) + "d ";
+						s %= 86400;
+					}
+					if (s > 3600) {
+						str += ~~(s/3600) + "h ";
+						s %= 3600;
+					}
+					if (s > 60) {
+						str += ~~(s/60) + "m ";
+						s %= 60;
+					}
+					str += s.toFixed(1) + "s";
+					return str;
+				},
+				draw: function() {
+					var str = app.menus.gameplay.timer.elapsedTime();
+					ctx.font = "10px Helvetica";
+					var x = 620-ctx.measureText(str).width;
+					var y = 30;
+					ctx.fillText(str, x, y);
+				},
+			},
 		},
 		pause: {
 			active: false,
+			pauseTime: 0,
+			elapsedTime: 0,
 			activate: function() {
 				if(app.state.current == 'gameplay') {
 					if(!app.menus.pause.active) {
@@ -152,13 +183,18 @@ var app = {
 			toggle: function() {
 				if(app.state.current == 'gameplay') {
 					if(!app.menus.pause.active) {
+						app.menus.pause.pauseTime = Date.now();
 						app.menus.pause.active = true;
 						app.menus.fade();
 						app.menus.pause.draw();
 						$('.action-pause').html("Play");
+						console.log(app.startTime);
 					} else {
+						app.menus.pause.elapsedTime = app.menus.pause.elapsedTime + (Date.now() - app.menus.pause.pauseTime);
 						app.menus.pause.active = false;
 						$('.action-pause').html("Pause");
+						console.log('Time paused: '+app.menus.pause.elapsedTime);
+						console.log('Time played: '+app.elapsedTime());
 					}
 				}
 			},
@@ -179,10 +215,12 @@ var app = {
 		},
 		gameOver: {
 			active: false,
+			finalTime: 0,
 			activate: function() {
 				if(!app.menus.gameOver.active) {
 					app.menus.gameOver.active = true;
 					app.state.current = 'gameover';
+					app.menus.gameOver.finalTime = app.menus.gameplay.timer.elapsedTime();
 				}
 			},
 			draw: function() {
@@ -192,6 +230,12 @@ var app = {
 				var str = "GAME OVER";
 				var x = (app.width/2) - (ctx.measureText(str).width/2);
 				ctx.fillText(str, x, 160);
+				// Draw time
+				ctx.font = "16px Helvetica";
+				ctx.fillStyle = "#DA0734";
+				var str = "You survived: "+app.menus.gameOver.finalTime;
+				var x = (app.width/2) - (ctx.measureText(str).width/2);
+				ctx.fillText(str, x, 200);
 			},
 			end: function() {
 				// End game
@@ -249,6 +293,7 @@ var app = {
 				} else {
 					// Only draw UI while game is active
 					app.menus.gameplay.towers.draw();
+					app.menus.gameplay.timer.draw();
 				}
 			}
 			if(app.planet.hp <= 0) {
