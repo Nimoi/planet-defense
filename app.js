@@ -67,7 +67,7 @@ var app = {
 						boundw: 40,
 						boundh: 40,
 						name: 'basic',
-						price: 25,
+						price: 15,
 						style: 'rgba(0,132,255,1)'
 					}, {
 						x: 162,
@@ -78,7 +78,7 @@ var app = {
 						boundw: 40,
 						boundh: 40,
 						name: 'laser',
-						price: 50,
+						price: 25,
 						style: "#DA0734"
 					},
 				],
@@ -431,7 +431,7 @@ var app = {
 	},
 	buildTower: function(x, y, type) {
 		if(type == 'basic') {
-			app.player.cash -= 25;
+			app.player.cash -= 15;
 			var size = 12;
 			var range = 80;
 			var ammo = 3;
@@ -442,7 +442,7 @@ var app = {
 			var image;
 		}
 		if(type == 'laser') {
-			app.player.cash -= 50;
+			app.player.cash -= 25;
 			var size = 10;
 			var range = 60;
 			var ammo = 1;
@@ -710,16 +710,16 @@ var app = {
 					if(unit.target) {
 						if(current.delay) {
 					    	// Flash on hit
-					    	var normalStyle = unit.target.style;
-					    	unit.target.style = "#fff";
-					    	window.setTimeout(function() {
-					    		if(unit.target) {
-								    unit.target.style = normalStyle;
-								}
-							}, 15);
+							//var normalStyle = unit.target.style;
+							//unit.target.style = "#fff";
+							//window.setTimeout(function() {
+							//	if(unit.target) {
+							// 	    unit.target.style = normalStyle;
+							// 	}
+							// }, 25);
 				    		// Remove health
 					    	unit.target.hp -= unit.damage;
-					    	console.log("Enemy HP: "+unit.target.hp);
+					    	// console.log("Enemy HP: "+unit.target.hp);
 					    	if(unit.target.hp <= 0) {
 					    		clearInterval(current.damageInterval);
 					    		current.damageInterval = 0;
@@ -790,7 +790,7 @@ var app = {
 				if(unit == type[i]) {
 					if(type == app.enemies) {
 						if(type[i].type == 'basic') {
-							app.player.addCash(2);
+							app.player.addCash(1);
 						} 
 					}
 					type.splice(i, 1);
