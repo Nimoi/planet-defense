@@ -596,11 +596,7 @@ var app = {
 			    	projectile.active = false;
 			    } else {
 			    	// Draw projectile
-			    	if(projectile.owner.team == 'player') {
-					    ctx.fillStyle = '#0084ff';
-			    	} else {
-					    ctx.fillStyle = 'red';
-			    	}
+				    ctx.fillStyle = projectile.style;
 				    if (projectile.owner.type == 'basic') {
 						ctx.beginPath();
 						ctx.arc(projectile.x, projectile.y, projectile.size, 0, Math.PI * 2, true);
@@ -611,7 +607,7 @@ var app = {
 		    } else if(projectile.owner.type == 'laser') {
 		    	if(projectile.target.hp > 0 && app.inRange(projectile.target, projectile.owner)) {
 			    	ctx.lineWidth = 1;
-					ctx.strokeStyle = '#0084ff';
+					ctx.strokeStyle = projectile.style;
 					ctx.beginPath();
 					var oX = projectile.owner.x + projectile.owner.size/2;
 					var oY = projectile.owner.y + projectile.owner.size/2;
@@ -675,7 +671,8 @@ var app = {
 						'target':unit.target,
 						'size':1.5,
 						'owner':unit,
-						'active':true
+						'active':true,
+						'style':'#F1A20D'
 					});
 					--unit.ammo;
 					// Delayed rate of firing
@@ -696,7 +693,8 @@ var app = {
 					'size':1.5,
 					'owner':unit,
 					'active':true,
-					damageInterval: setInterval(function() {
+					'style':'#F1A20D',
+					'damageInterval': setInterval(function() {
 						if(unit.target) {
 				    		// Remove health
 					    	unit.target.hp -= unit.damage;
