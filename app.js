@@ -442,6 +442,7 @@ var app = {
 			var image;
 		}
 		if(type == 'laser') {
+			app.player.cash -= 50;
 			var size = 10;
 			var range = 60;
 			var ammo = 1;
