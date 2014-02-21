@@ -303,7 +303,7 @@ var app = {
 		app.planet.y = app.height/2;
 		app.planet.size = 100;
 		app.planet.hp = 100;
-		app.planet.team = "base";
+		app.planet.array = "base";
 	},
 	drawPlanet: function() {
 		var x = app.planet.x;
@@ -462,7 +462,7 @@ var app = {
 			'delay': false,
 			'target':'',
 			'type':type,
-			'team':'player',
+			'array':'towers',
 			'hp':hp,
 			'damage':damage,
 			'style':style,
@@ -490,7 +490,7 @@ var app = {
 				'delay': false,
 				'target':app.planet,
 				'type':'basic',
-				'team':'creep',
+				'array':'enemies',
 				'hp':10,
 				'damage':2,
 				'style':"red"
@@ -585,7 +585,10 @@ var app = {
 			    	++projectile.owner.ammo;
 			    	// Remove health
 			    	projectile.target.hp -= projectile.owner.damage;
-			    	app.checkHealth(projectile.target);
+			    	if(projectile.target.hp <= 0) {
+			    		app.removeEntity(projectile.target, projectile.target.type);
+			    	}
+			    	// app.checkHealth(projectile.target);
 			    	// Flash on hit
 			    	var normalStyle = projectile.target.style;
 			    	projectile.target.style = "#fff";
@@ -626,9 +629,12 @@ var app = {
 			    	// console.log(laserPerams);
 		    	} else {
 			    	// Remove Projectile
-					app.removeEntity(projectile, app.projectiles);
+					projectile.active = false;
 		    		// Remove damage interval
-		    		clearInterval(projectile.damageInterval);
+		    		clearInterval(projectile.owner.damageInterval);
+		    		projectile.owner.damageInterval = 0;
+		    		// Refill ammo
+		    		++projectile.owner.ammo;
 		    	}
 		    }
 		});
@@ -673,7 +679,8 @@ var app = {
 						'size':1.5,
 						'owner':unit,
 						'active':true,
-						'style':'#F1A20D'
+						'style':'#F1A20D',
+						'array':'projectiles'
 					});
 					--unit.ammo;
 					// Delayed rate of firing
@@ -685,21 +692,23 @@ var app = {
 				}
 			}
 		} else if(unit.type == 'laser') {
-			if(!unit.delay) {
+			if(unit.ammo) {
+				var current = unit;
+				current.delay = true;
 				app.projectiles.push({
 					'x':unit.x,
 					'y':unit.y,
 					'speed':1,
 					'target':unit.target,
-					'size':1.5,
+					'size':1,
 					'owner':unit,
 					'active':true,
 					'style':'#F1A20D',
-					'damageInterval': setInterval(function() {
-						if(unit.target) {
-				    		// Remove health
-					    	unit.target.hp -= unit.damage;
-					    	app.checkHealth(unit.target);
+					'array':'projectiles'
+				});
+				current.damageInterval = setInterval(function() {
+					if(unit.target) {
+						if(current.delay) {
 					    	// Flash on hit
 					    	var normalStyle = unit.target.style;
 					    	unit.target.style = "#fff";
@@ -708,9 +717,20 @@ var app = {
 								    unit.target.style = normalStyle;
 								}
 							}, 15);
+				    		// Remove health
+					    	unit.target.hp -= unit.damage;
+					    	console.log("Enemy HP: "+unit.target.hp);
+					    	if(unit.target.hp <= 0) {
+					    		clearInterval(current.damageInterval);
+					    		current.damageInterval = 0;
+					    		app.removeEntity(unit.target);
+					    		current.delay = false;
+					    	} else {
+					    		// Enemy 
+					    	}
 						}
-			    	}, unit.rate)
-				});
+					}
+		    	}, unit.rate);
 				--unit.ammo;
 			}
 		}
@@ -733,21 +753,20 @@ var app = {
 			return true;
 		}
 	},
-	checkHealth: function(unit) {
+	checkHealth: function(unit) { // Going to remove this!
 		if(unit.hp <= 0) {
-			if(unit.team != 'base') {
+			if(unit.array != 'base') {
 				var type;
-				if(unit.team == 'player') {
+				if(unit.array == 'player') {
 					type = app.towers;
-				} else if(unit.team == 'creep') {
+				} else if(unit.array == 'creep') {
 					type = app.enemies;
-					app.player.addCash(2);
 				} else {
 					console.log("Unidentified object shot:");
 					console.log(unit);
 				}
 				// Remove unit from type
-				app.removeEntity(unit, type);
+				app.removeEntity(unit);
 			} else {
 				// Planet
 				console.log(app.planet.hp);
@@ -756,11 +775,32 @@ var app = {
 			}	
 		}
 	},
-	removeEntity: function(unit, type) {
-		for(i=0;i<type.length;i++) {
-			if(unit == type[i]) {
-				type.splice(i, 1);
+	removeEntity: function(unit) {
+		var type = null;
+		console.log('removing: '+unit.array);
+		if(unit.array == 'projectiles') {
+			type = app.projectiles;
+		} else if(unit.array == 'towers') {
+			type = app.towers;
+		} else if(unit.array == 'enemies') {
+			type = app.enemies;
+		}
+		if(type) {
+			for(i=0;i<type.length;i++) {
+				if(unit == type[i]) {
+					if(type == app.enemies) {
+						if(type[i].type == 'basic') {
+							app.player.addCash(2);
+						} 
+					}
+					type.splice(i, 1);
+				}
 			}
+		} else {
+			// Planet
+			console.log(app.planet.hp);
+			app.planet.shine = "rgba(0,0,0,0)";
+			app.planet.style = "rgba(0,0,0,0)";
 		}
 	},
 	// Generate a random color
