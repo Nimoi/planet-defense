@@ -2,7 +2,6 @@
 * - Defend your planets against attackers
 * - Build and upgrade defenses
 * - Expand your planetary empire
-* 
 */
 var canvas;
 $(document).ready(function() {
@@ -60,15 +59,27 @@ var app = {
 			towers: {
 				height: 40,
 				buttons: [{
-						x: 100,
+						x: 120,
 						y: 10,
 						size: 12,
-						boundx: 80,
+						boundx: 100,
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
 						name: 'basic',
 						price: 25,
+						style: 'rgba(0,132,255,1)'
+					}, {
+						x: 162,
+						y: 10,
+						size: 10,
+						boundx: 142,
+						boundy: 0,
+						boundw: 40,
+						boundh: 40,
+						name: 'laser',
+						price: 50,
+						style: "#DA0734"
 					},
 				],
 				draw: function() {
@@ -84,18 +95,16 @@ var app = {
 					ctx.font = "bold 16px Helvetica";
 					ctx.fillStyle = "#F9E873";
 					if(app.player.cash < 1000) {
-						var str = "$ "+app.player.cash+"mil";
+						var str = "$ "+app.player.cash+"m";
 					} else {
 						var numbil = app.player.cash*0.001;
-						var str = "$ "+numbil.toFixed(1)+"bil";
+						var str = "$ "+numbil.toFixed(1)+"b";
 					}
 					var x = 10;
 					var y = 25;
 					ctx.fillText(str, x, y);
-					
 					for(i=0;i < context.buttons.length;i++) {
-						// Draw default tower
-						// TODO - add switch for other towers
+						// Display buttons
 						// Button Background
 						var width = 40;
 						ctx.fillStyle = "rgba(45, 45, 45, 0.5)";
@@ -104,12 +113,14 @@ var app = {
 							context.buttons[i].boundw, 
 							context.buttons[i].boundh);
 						// Preview tower
-						if(app.player.cash >= context.buttons[i].price) {
-							ctx.fillStyle = 'rgba(0,132,255,1)';
-						} else {
-							ctx.fillStyle = 'rgba(200,200,200,0.7)';
+						// Tower styles
+						var style = context.buttons[i].style;
+						if(app.player.cash < context.buttons[i].price) {
+							style = 'rgba(200,200,200,0.7)';
 						}
-						var x = context.buttons[i].x - context.buttons[i].size*0.5; // Center preview
+						// Center preview
+						var x = context.buttons[i].x - context.buttons[i].size*0.5;
+						ctx.fillStyle = style;
 						ctx.fillRect(x, context.buttons[i].y, context.buttons[i].size, context.buttons[i].size);
 						// Draw price
 						if(app.player.cash >= context.buttons[i].price) {
@@ -326,7 +337,7 @@ var app = {
 			if(app.placeNewTower) {
 				if(mousePos.y > app.menus.gameplay.towers.height) {
 					if(!app.addTower.checkNewCollide()) {
-						app.buildTower(app.newTower.x, app.newTower.y, 'laser');
+						app.buildTower(app.newTower.x, app.newTower.y, app.newTower.type);
 						app.placeNewTower = false;
 					}
 				}
@@ -346,14 +357,16 @@ var app = {
 				}
 				if(mousePos.y <= app.menus.gameplay.towers.height) { // Clicked on Menu
 					var current = app.menus.gameplay.towers;
-					var x1 = current.buttons[0].boundx;
-					var x2 = x1 + current.buttons[0].boundw;
-					var y1 = current.buttons[0].boundy;
-					var y2 = y1 + current.buttons[0].boundh;
-					if(mousePos.x > x1 && mousePos.x < x2) {
-						if(mousePos.y > y1 && mousePos.y < y2) {
-							// Add Tower
-							app.addTower.init();
+					for(i=0;i < current.buttons.length;i++) {
+						var x1 = current.buttons[i].boundx;
+						var x2 = x1 + current.buttons[i].boundw;
+						var y1 = current.buttons[i].boundy;
+						var y2 = y1 + current.buttons[i].boundh;
+						if(mousePos.x > x1 && mousePos.x < x2) {
+							if(mousePos.y > y1 && mousePos.y < y2) {
+								// Add Tower
+								app.addTower.init(current.buttons[i]);
+							}
 						}
 					}
 				}
@@ -364,20 +377,24 @@ var app = {
 		}
 	},
 	addTower: {
-		init: function() {
-			if(app.player.cash >= 25) {
+		init: function(tower) {
+			// "tower" contains button object
+			if(app.player.cash >= tower.price) {
 				app.placeNewTower = true;
+				app.newTower = {
+					'type':tower.name,
+					'price':tower.price,
+					'style':tower.style,
+					'size':tower.size,
+				}
 				canvas.addEventListener('mousemove', app.addTower.setNewPos);
 			}
 		},
 		setNewPos: function(e) {
 			var mousePos = app.getMousePos(canvas, e);
 			var size = 12;
-			app.newTower = {
-				"x": mousePos.x,
-				"y": mousePos.y,
-				"size": size
-			}
+			app.newTower.x = mousePos.x;
+			app.newTower.y = mousePos.y;
 		},
 		checkNewCollide: function() {
 			var noRoom = false;
@@ -394,12 +411,10 @@ var app = {
 		},
 		updateNewTower: function() {
 			if(app.newTower.y > app.menus.gameplay.towers.height) {
-				if(app.addTower.checkNewCollide()) {
-					ctx.fillStyle = "rgba(228,16,16,0.5)";
-				} else {
-					ctx.fillStyle = "rgba(0,132,255,0.5)";
-				}
 				ctx.fillStyle = app.newTower.style;
+				if(app.addTower.checkNewCollide()) {
+					ctx.fillStyle = "rgba(255,255,255,0.5)";
+				}
 				ctx.fillRect(app.newTower.x, app.newTower.y, app.newTower.size, app.newTower.size);
 			}
 		},
@@ -423,15 +438,17 @@ var app = {
 			var rate = 500;
 			var hp = 20;
 			var damage = 5;
+			var style = "rgba(0,132,255,1)";
 			var image;
 		}
 		if(type == 'laser') {
 			var size = 10;
 			var range = 60;
-			var ammo = -1;
+			var ammo = 1;
 			var rate = 100;
 			var hp = 15;
 			var damage = 1;
+			var style = "#DA0734";
 			var image;
 		}
 		app.towers.push({
@@ -447,7 +464,7 @@ var app = {
 			'team':'player',
 			'hp':hp,
 			'damage':damage,
-			'style':'rgba(0,132,255,1)',
+			'style':style,
 			'image':image
 		});
 	},
@@ -458,7 +475,6 @@ var app = {
 			var x = app.width+(Math.random()*60)-10;
 			var y = (app.height/2)+(Math.random()*60)-10;
 			var range = 50;
-			var vision = 80;
 			var speed = 2;
 			var ammo = 2;
 			var rate = 500; // rate between shots
@@ -468,7 +484,6 @@ var app = {
 				'size':size,
 				'speed':speed,
 				'range':range,
-				'vision':vision,
 				'ammo':ammo,
 				'rate':rate,
 				'delay': false,
@@ -489,31 +504,38 @@ var app = {
 			// ctx.fill();
 
 			// Draw Tower
-			ctx.save();
-			var transx = tower.x + 0.5*tower.size;
-			var transy = tower.y + 0.5*tower.size;
-			ctx.translate(transx, transy);
-			var rotation = Math.atan2(tower.target.y - tower.y, tower.target.x - tower.x);
-			// * (180 / Math.PI) //rads
-			ctx.rotate(rotation);
-			ctx.fillStyle = tower.style;
-			ctx.translate(-transx, -transy);
-			ctx.fillRect(tower.x, tower.y, tower.size, tower.size);
-			ctx.restore();
+			if(tower.target) {
+				ctx.save();
+				var transx = tower.x + 0.5*tower.size;
+				var transy = tower.y + 0.5*tower.size;
+				ctx.translate(transx, transy);
+				var rotation = Math.atan2(tower.target.y - tower.y, tower.target.x - tower.x);
+				// * (180 / Math.PI) //rads
+				ctx.rotate(rotation);
+				ctx.fillStyle = tower.style;
+				ctx.translate(-transx, -transy);
+				ctx.fillRect(tower.x, tower.y, tower.size, tower.size);
+				ctx.restore();
+			} else {
+				ctx.fillStyle = tower.style;
+				ctx.fillRect(tower.x, tower.y, tower.size, tower.size);
+			}
 
 			// Tower AI
-			if(tower.target == '') {
+			if(!tower.target) {
+				// Has no target
 				app.findTarget(tower, 'creep');
-				// Is target in range?
 			} else if(app.inRange(tower, tower.target)) {
-				// Is target alive?
+				// Has target in range
 				if(tower.target.hp > 0) {
+					// Target is alive
 					app.shootTarget(tower);
 				} else {
-					app.findTarget(tower, 'creep');
+					tower.target = null;
 				}
 			} else {
-				app.findTarget(tower, 'creep');
+				// Has target, not in range
+				tower.target = null;
 			}
 
 			if(tower.showHealth) {
@@ -587,7 +609,7 @@ var app = {
 				    }
 			    }
 		    } else if(projectile.owner.type == 'laser') {
-		    	if(projectile.target.hp > 0) {
+		    	if(projectile.target.hp > 0 && app.inRange(projectile.target, projectile.owner)) {
 			    	ctx.lineWidth = 1;
 					ctx.strokeStyle = '#0084ff';
 					ctx.beginPath();
@@ -598,16 +620,18 @@ var app = {
 			    	ctx.moveTo(oX,oY);
 			    	ctx.lineTo(tX,tY);
 			    	ctx.stroke();
-			    	var laserPerams = {
-			    		ownerX: oX,
-			    		ownerY: oY,
-			    		targetX: tX,
-			    		targetY: tY
-			    	}
-			    	console.log(laserPerams);
+			    	// var laserPerams = {
+			    	// 	ownerX: oX,
+			    	// 	ownerY: oY,
+			    	// 	targetX: tX,
+			    	// 	targetY: tY
+			    	// }
+			    	// console.log(laserPerams);
 		    	} else {
-			    	// reset delay allowing laser tower to shoot again
-			    	projectile.owner.delay = false;
+			    	// Remove Projectile
+					app.removeEntity(projectile, app.projectiles);
+		    		// Remove damage interval
+		    		clearInterval(projectile.damageInterval);
 		    	}
 		    }
 		});
@@ -632,7 +656,7 @@ var app = {
 		}
 		// Loop through targettable enemies
 		for(j=0; j < target.length; j++) {
-			if(app.inSight(unit, target[j])) {
+			if(app.inRange(unit, target[j])) {
 				unit.target = target[j];
 				break;
 			}
@@ -654,6 +678,7 @@ var app = {
 						'active':true
 					});
 					--unit.ammo;
+					// Delayed rate of firing
 					unit.delay = true;
 					var current = unit;
 					window.setTimeout(function() {
@@ -670,25 +695,25 @@ var app = {
 					'target':unit.target,
 					'size':1.5,
 					'owner':unit,
-					'active':true
+					'active':true,
+					damageInterval: setInterval(function() {
+						if(unit.target) {
+				    		// Remove health
+					    	unit.target.hp -= unit.damage;
+					    	app.checkHealth(unit.target);
+					    	// Flash on hit
+					    	var normalStyle = unit.target.style;
+					    	unit.target.style = "#fff";
+					    	window.setTimeout(function() {
+					    		if(unit.target) {
+								    unit.target.style = normalStyle;
+								}
+							}, 15);
+						}
+			    	}, unit.rate)
 				});
 				--unit.ammo;
-				unit.delay = true;
-				var current = unit;
-				window.setTimeout(function() {
-				    current.delay = false;
-				}, unit.rate);
 			}
-		}
-		
-	},
-	inSight: function(unit1, unit2) {
-		// TODO: Better method of range detection
-		var distance = Math.sqrt(Math.pow(unit1.x - unit2.x, 2) + Math.pow(unit1.y - unit2.y, 2)).toFixed(2);
-		if(distance > unit1.vision+unit2.size) {
-			return false;
-		} else {
-			return true;
 		}
 	},
 	inRange: function(unit1, unit2) {
@@ -722,12 +747,8 @@ var app = {
 					console.log("Unidentified object shot:");
 					console.log(unit);
 				}
-				// Remove unit
-				for(i=0;i<type.length;i++) {
-					if(unit == type[i]) {
-						type.splice(i, 1);
-					}
-				}
+				// Remove unit from type
+				app.removeEntity(unit, type);
 			} else {
 				// Planet
 				console.log(app.planet.hp);
@@ -736,38 +757,18 @@ var app = {
 			}	
 		}
 	},
+	removeEntity: function(unit, type) {
+		for(i=0;i<type.length;i++) {
+			if(unit == type[i]) {
+				type.splice(i, 1);
+			}
+		}
+	},
 	// Generate a random color
 	randColor: function() {
 		return '#'+ ('000000' + Math.floor(Math.random()*16777215).toString(16)).slice(-6);
 	},
-	test: function() {
-		var x = 100;
-		var y = 100;
-		var w = 100;
-		var h = 100;
-		var tx = 250;
-		var ty = 250;
-		if(testrotate) {
-			ctx.save();
-			var transx = x + 0.5*w;
-			var transy = y + 0.5*h;
-			ctx.translate(transx, transy);
-			console.log('translate x: '+transx);
-			console.log('translate y: '+transy);
-			var rotation = Math.atan2(ty - y, tx - x);
-			ctx.rotate(rotation);
-			ctx.fillStyle = "#fff";
-			ctx.translate(-transx, -transy);
-			ctx.fillRect(x, y, w, h);
-			ctx.restore();
-		} else {
-			ctx.fillStyle = "#fff";
-			ctx.fillRect(x, y, w, h);
-		}
-	}
 }
-
-var testrotate = false;
 
 ntils = {
 	colorLog: function(msg, color) {
