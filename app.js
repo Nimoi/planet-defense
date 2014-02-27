@@ -8,23 +8,9 @@ $(document).ready(function() {
 	// Init app
 	canvas = document.getElementById('stage');
 	app.initialize();
-	// Pause functionality
 	// Pause when window loses focus
 	window.addEventListener('blur', function() {
 		//app.menus.pause.activate();
-	});
-	// TEMP MENUS
-	// Pause when user clicks "Pause" btn
-	$('.action-pause').on('click', function() {
-		if(app.state.current == 'gameplay') {
-			app.menus.pause.toggle();
-		}
-	});
-	// Create tower
-	$('.action-tower').on('click', function() {
-		if(!app.menus.pause.active) {
-			app.addTower.init();
-		}
 	});
 	// Canvas Handlers
 	canvas.addEventListener('click', app.clickHandle);
@@ -72,7 +58,7 @@ var app = {
 					}, {
 						x: 162,
 						y: 10,
-						size: 10,
+						size: 12,
 						boundx: 142,
 						boundy: 0,
 						boundw: 40,
@@ -80,6 +66,17 @@ var app = {
 						name: 'laser',
 						price: 25,
 						style: "#DA0734"
+					}, {
+						x: 204,
+						y: 10,
+						size: 12,
+						boundx: 184,
+						boundy: 0,
+						boundw: 40,
+						boundh: 40,
+						name: 'shock',
+						price: 40,
+						style: "#EFC94C"
 					},
 				],
 				draw: function() {
@@ -119,9 +116,9 @@ var app = {
 							style = 'rgba(200,200,200,0.7)';
 						}
 						// Center preview
-						var x = context.buttons[i].x - context.buttons[i].size*0.5;
+						var x = context.buttons[i].x - 6;
 						ctx.fillStyle = style;
-						ctx.fillRect(x, context.buttons[i].y, context.buttons[i].size, context.buttons[i].size);
+						ctx.fillRect(x, context.buttons[i].y, 12, 12);
 						// Draw price
 						if(app.player.cash >= context.buttons[i].price) {
 							ctx.fillStyle = "rgba(255, 255, 255, 1)";
@@ -131,7 +128,7 @@ var app = {
 						ctx.font = "10px Helvetica";
 						var str = "$"+context.buttons[i].price;
 						var x = context.buttons[i].x - (ctx.measureText(str).width/2);
-						var y = context.buttons[i].y + context.buttons[i].size + 12;
+						var y = context.buttons[i].y + 12 + 12;
 						ctx.fillText(str, x, y);
 					};
 				},
@@ -160,8 +157,8 @@ var app = {
 				draw: function() {
 					var str = app.menus.gameplay.timer.elapsedTime();
 					ctx.font = "10px Helvetica";
-					var x = 620-ctx.measureText(str).width;
-					var y = 30;
+					var x = 560-ctx.measureText(str).width;
+					var y = 24;
 					ctx.fillText(str, x, y);
 				},
 			},
@@ -176,7 +173,6 @@ var app = {
 						app.menus.pause.active = true;
 						app.menus.fade(); 
 						app.menus.pause.draw();
-						$('.action-pause').html("Play");
 					}
 				}
 			},
@@ -187,12 +183,9 @@ var app = {
 						app.menus.pause.active = true;
 						app.menus.fade();
 						app.menus.pause.draw();
-						$('.action-pause').html("Play");
-						console.log(app.startTime);
 					} else {
 						app.menus.pause.elapsedTime = app.menus.pause.elapsedTime + (Date.now() - app.menus.pause.pauseTime);
 						app.menus.pause.active = false;
-						$('.action-pause').html("Pause");
 						console.log('Time paused: '+app.menus.pause.elapsedTime);
 						console.log('Time played: '+app.elapsedTime());
 					}
@@ -211,6 +204,19 @@ var app = {
 				var str = "Click to resume";
 				var x = (app.width/2) - (ctx.measureText(str).width/2);
 				ctx.fillText(str, x, 200);
+			},
+			button: {
+				x: 580,
+				y: 0,
+				w: 47,
+				h: 40,
+				str: "PAUSE",
+				draw: function() {
+					var current = app.menus.pause.button;
+					ctx.font = "14px Helvetica";
+					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+					ctx.fillText(current.str, current.x, 24);
+				},
 			},
 		},
 		gameOver: {
@@ -294,6 +300,7 @@ var app = {
 					// Only draw UI while game is active
 					app.menus.gameplay.towers.draw();
 					app.menus.gameplay.timer.draw();
+					app.menus.pause.button.draw();
 				}
 			}
 			if(app.planet.hp <= 0) {
@@ -401,16 +408,31 @@ var app = {
 					app.tooltip = false;
 				}
 				if(mousePos.y <= app.menus.gameplay.towers.height) { // Clicked on Menu
-					var current = app.menus.gameplay.towers;
-					for(i=0;i < current.buttons.length;i++) {
-						var x1 = current.buttons[i].boundx;
-						var x2 = x1 + current.buttons[i].boundw;
-						var y1 = current.buttons[i].boundy;
-						var y2 = y1 + current.buttons[i].boundh;
+					// Tower clicked
+					var current = app.menus.gameplay.towers.buttons;
+					for(i=0;i < current.length;i++) {
+						if(checkButton(current[i].boundx,current[i].boundy,current[i].boundw,current[i].boundh)) {
+							// Add Tower
+							app.addTower.init(current[i]);
+						}
+					}
+					// Pause clicked
+					var current = app.menus.pause.button;
+					if(checkButton(current.x,current.y,current.w,current.h)) {
+						if(app.state.current == 'gameplay') {
+							app.menus.pause.toggle();
+						}
+					}
+					function checkButton(x,y,w,h) {
+						var x1 = x;
+						var x2 = x1 + w;
+						var y1 = y;
+						var y2 = y1 + h;
 						if(mousePos.x > x1 && mousePos.x < x2) {
 							if(mousePos.y > y1 && mousePos.y < y2) {
-								// Add Tower
-								app.addTower.init(current.buttons[i]);
+								return true;
+							} else {
+								return false;
 							}
 						}
 					}
@@ -418,7 +440,6 @@ var app = {
 			}
 		} else { // Game is paused
 			app.menus.pause.active = false;
-			$('.action-pause').html("Pause");
 		}
 	},
 	addTower: {
@@ -488,13 +509,24 @@ var app = {
 		}
 		if(type == 'laser') {
 			app.player.cash -= 25;
-			var size = 10;
+			var size = 12;
 			var range = 60;
 			var ammo = 1;
 			var rate = 100;
 			var hp = 15;
 			var damage = 1;
 			var style = "#DA0734";
+			var image;
+		}
+		if(type == 'shock') {
+			app.player.cash -= 40;
+			var size = 12;
+			var range = 20;
+			var ammo = 1;
+			var rate = 1000;
+			var hp = 25;
+			var damage = 2;
+			var style = "#EFC94C";
 			var image;
 		}
 		app.towers.push({
@@ -538,17 +570,13 @@ var app = {
 				'array':'enemies',
 				'hp':10,
 				'damage':2,
-				'style':"red"
+				'style':"red",
+				'active':true
 			});
 		}
 	},
 	updateTowers: function() {
 		app.towers.forEach(function(tower) {
-			// ctx.beginPath();
-			// ctx.arc(tower.x, tower.y, tower.size, 0, Math.PI * 2, true);
-			// ctx.closePath();
-			// ctx.fill();
-
 			// Draw Tower
 			if(tower.target) {
 				ctx.save();
@@ -567,21 +595,27 @@ var app = {
 				ctx.fillRect(tower.x, tower.y, tower.size, tower.size);
 			}
 
-			// Tower AI
-			if(!tower.target) {
-				// Has no target
-				app.findTarget(tower, 'creep');
-			} else if(app.inRange(tower, tower.target)) {
-				// Has target in range
-				if(tower.target.hp > 0) {
-					// Target is alive
-					app.shootTarget(tower);
+			if(tower.type != 'shock') {
+				// Tower AI
+				if(!tower.target) {
+					// Has no target
+					app.findTarget(tower, 'creep');
+				} else if(app.inRange(tower, tower.target)) {
+					// Has target in range
+					if(tower.target.hp > 0) {
+						// Target is alive
+						app.shootTarget(tower);
+					} else {
+						tower.target = null;
+					}
 				} else {
+					// Has target, not in range
 					tower.target = null;
 				}
 			} else {
-				// Has target, not in range
-				tower.target = null;
+				if(tower.ammo) {
+					app.shootTarget(tower);
+				}
 			}
 
 			if(tower.showHealth) {
@@ -604,7 +638,9 @@ var app = {
 			ctx.restore();
 
 			if(enemy.target == app.planet) {
-				// app.findTarget(enemy, 'towers');
+				if(app.mode == 'hard') {
+					app.findTarget(enemy, 'towers');
+				}
 			}
 
 			// Is target in range?
@@ -646,12 +682,10 @@ var app = {
 			    } else {
 			    	// Draw projectile
 				    ctx.fillStyle = projectile.style;
-				    if (projectile.owner.type == 'basic') {
-						ctx.beginPath();
-						ctx.arc(projectile.x, projectile.y, projectile.size, 0, Math.PI * 2, true);
-						ctx.closePath();
-						ctx.fill();
-				    }
+					ctx.beginPath();
+					ctx.arc(projectile.x, projectile.y, projectile.size, 0, Math.PI * 2, true);
+					ctx.closePath();
+					ctx.fill();
 			    }
 		    } else if(projectile.owner.type == 'laser') {
 		    	if(projectile.target.hp > 0 && app.inRange(projectile.target, projectile.owner)) {
@@ -665,13 +699,6 @@ var app = {
 			    	ctx.moveTo(oX,oY);
 			    	ctx.lineTo(tX,tY);
 			    	ctx.stroke();
-			    	// var laserPerams = {
-			    	// 	ownerX: oX,
-			    	// 	ownerY: oY,
-			    	// 	targetX: tX,
-			    	// 	targetY: tY
-			    	// }
-			    	// console.log(laserPerams);
 		    	} else {
 			    	// Remove Projectile
 					projectile.active = false;
@@ -681,6 +708,15 @@ var app = {
 		    		// Refill ammo
 		    		++projectile.owner.ammo;
 		    	}
+		    } else if(projectile.owner.type == 'shock') {
+		    	var x = projectile.owner.x + (projectile.owner.size/2);
+		    	var y = projectile.owner.y + (projectile.owner.size/2);
+		    	// Draw projectile
+			    ctx.fillStyle = projectile.owner.shockStyle;
+				ctx.beginPath();
+				ctx.arc(x, y, projectile.size, 0, Math.PI * 2, true);
+				ctx.closePath();
+				ctx.fill();
 		    }
 		});
 		app.projectiles = app.projectiles.filter(function(projectile) {
@@ -775,6 +811,59 @@ var app = {
 					    	}
 						}
 					}
+		    	}, unit.rate);
+				--unit.ammo;
+			}
+		} else if(unit.type == 'shock') {
+			if(unit.ammo) {
+				var current = unit;
+				current.delay = true;
+				app.projectiles.push({
+					'x':unit.x,
+					'y':unit.y,
+					'speed':1,
+					'size':20,
+					'owner':unit,
+					'active':true,
+					// 'style':'rgba(69,178,157,0.5)',
+					'array':'projectiles'
+				});
+				current.shockStyle = "rgba(69,178,157,0)";
+				current.damageInterval = setInterval(function() {
+					var innerRadius = 1;
+					var outerRadius = 20;
+					var gradient = ctx.createRadialGradient(current.x+6, current.y+6, innerRadius, current.x+6, current.y+6, outerRadius);
+					gradient.addColorStop(0, "rgba(239,201,76,0)");
+					gradient.addColorStop(1, "rgba(239,201,76,1)");
+					// Flash on shock
+			    	current.shockStyle = gradient;
+			    	// current.shockStyle = "rgba(69,178,157,0.4)";
+			    	window.setTimeout(function() {
+					    current.shockStyle = "rgba(69,178,157,0)";
+					}, 200);
+		    		// Damage nearby enemies
+		    		console.log('Tick');
+		    		var num = 0;
+		    		for(i=0;i<app.enemies.length;i++) {
+		    			console.log('current: '+i);
+		    			if(app.inRange(unit,app.enemies[i])) {
+					    	app.enemies[i].hp -= unit.damage;
+					    	app.enemies[i].speed = 1;
+					    	console.log('enemy hp:'+app.enemies[i].hp);
+					    	if(app.enemies[i].hp <= 0) {
+						    	// app.removeEntity(app.enemies[i]);
+						    	// breaks loop too early
+						    	app.player.addCash(1);
+						    	app.enemies[i].active = false;
+						    	num++;
+					    	}
+		    			}
+		    		}
+		    		app.enemies = app.enemies.filter(function(enemy) {
+						return enemy.active;
+					});
+	    			console.log('max: '+app.enemies.length);
+		    		console.log('Tick kills: '+num);
 		    	}, unit.rate);
 				--unit.ammo;
 			}
