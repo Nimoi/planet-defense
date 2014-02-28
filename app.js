@@ -1027,7 +1027,7 @@ var app = {
 				if(float.opacity < 1) {
 					ctx.font = "12px Helvetica";
 					float.y -= 1;
-					float.opacity += 0.05;
+					float.opacity += 0.1;
 					ctx.fillStyle = "rgba("+float.rgb+","+float.opacity+")";
 					ctx.fillText(float.str, float.x, float.y);
 				} else {
