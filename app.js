@@ -999,7 +999,7 @@ var app = {
 	damageEntity: function(unit, dmg) {
 		unit.hp -= dmg;
 		var str = "-"+dmg;
-		ctx.font = "10px Helvetica";
+		ctx.font = "12px Helvetica";
 		function getCoords() {
 			return {
 				x:unit.x,
@@ -1025,7 +1025,7 @@ var app = {
 		app.floats.forEach(function(float) {
 			// if(float.owner.hp > 0) {
 				if(float.opacity < 1) {
-					ctx.font = "10px Helvetica";
+					ctx.font = "12px Helvetica";
 					float.y -= 1;
 					float.opacity += 0.05;
 					ctx.fillStyle = "rgba("+float.rgb+","+float.opacity+")";
