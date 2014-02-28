@@ -285,6 +285,10 @@ var app = {
 				if(app.enemies.length > 0) {
 					app.updateEnemies();
 				}
+				// Float text
+				if(app.floats.length > 0) {
+					app.updateFloats();
+				}
 				// Place-tower indicator
 				if(app.placeNewTower == true) {
 					app.addTower.updateNewTower();
@@ -862,7 +866,8 @@ var app = {
 							// 	}
 							// }, 25);
 				    		// Remove health
-					    	unit.target.hp -= unit.damage;
+					    	// unit.target.hp -= unit.damage;
+					    	app.damageEntity(unit.target, unit.damage);
 					    	// console.log("Enemy HP: "+unit.target.hp);
 					    	if(unit.target.hp <= 0) {
 					    		clearInterval(current.damageInterval);
@@ -990,9 +995,45 @@ var app = {
 			}	
 		}
 	},
+	floats: [],
 	damageEntity: function(unit, dmg) {
 		unit.hp -= dmg;
-
+		var str = "-"+dmg;
+		ctx.font = "10px Helvetica";
+		// ctx.measureText(str).width;
+		// var x = unit.x;
+		var current = new Object(unit);
+		var x = current.x - ctx.measureText(str).width/2;
+		var y = current.y - current.size/2 - 4;
+		var opacity = 1;
+		app.floats.push({
+			'owner':current,
+			'str':"-"+dmg,
+			'active':true,
+			'rgb':'254,58,37',
+			'opacity':1,
+			'y':y,
+			'x':x
+		});
+	},
+	updateFloats: function() {
+		app.floats.forEach(function(float) {
+			console.log(float.owner.x);
+			if(float.opacity > 0) {
+				// var x = float.owner.x - ctx.measureText(float.str).width/2;
+				float.y -= 1;
+				// var y = float.owner.y - float.owner.size/2 - 4;
+				float.opacity -= 0.1;
+				ctx.fillStyle = "rgba("+float.rgb+","+1+")";
+				ctx.fillText(float.str, float.x, float.y);
+			} else {
+				float.active = false;
+			}
+		});
+		// Clear floats
+		app.floats = app.floats.filter(function(float) {
+			return float.active;
+		});
 	},
 	removeEntity: function(unit) {
 		var type = null;
