@@ -690,7 +690,7 @@ var app = {
 			    	// Return ammo
 			    	++projectile.owner.ammo;
 			    	// Remove health
-			    	projectile.target.hp -= projectile.owner.damage;
+			    	app.damageEntity(projectile.target,projectile.owner.damage);
 			    	if(projectile.target.hp <= 0) {
 			    		app.removeEntity(projectile.target, projectile.target.type);
 			    	}
@@ -753,7 +753,7 @@ var app = {
 			    		projectile.explode = 1;
 			    		for(i=0;i<app.enemies.length;i++) {
 			    			if(app.inRange(projectile,app.enemies[i])) {
-						    	app.enemies[i].hp -= (projectile.owner.damage/2);
+			    				app.damageEntity(app.enemies[i],projectile.owner.damage);
 						    	if(app.enemies[i].hp <= 0) {
 							    	app.player.addCash(1);
 							    	app.enemies[i].active = false;
@@ -912,7 +912,7 @@ var app = {
 		    		// Damage nearby enemies
 		    		for(i=0;i<app.enemies.length;i++) {
 		    			if(app.inRange(unit,app.enemies[i])) {
-					    	app.enemies[i].hp -= unit.damage;
+		    				app.damageEntity(app.enemies[i],unit.damage);
 					    	app.enemies[i].speed = 1;
 					    	if(app.enemies[i].hp <= 0) {
 						    	// app.removeEntity(app.enemies[i]);
@@ -1000,35 +1000,40 @@ var app = {
 		unit.hp -= dmg;
 		var str = "-"+dmg;
 		ctx.font = "10px Helvetica";
-		// ctx.measureText(str).width;
-		// var x = unit.x;
-		var current = new Object(unit);
-		var x = current.x - ctx.measureText(str).width/2;
-		var y = current.y - current.size/2 - 4;
+		function getCoords() {
+			return {
+				x:unit.x,
+				y:unit.y
+			};
+		}
+		var coords = getCoords();
+		var x = coords.x - ctx.measureText(str).width/2;
+		var y = coords.y - unit.size/2 - 4;
+		// console.log('x: '+x+' y: '+y);
 		var opacity = 1;
 		app.floats.push({
-			'owner':current,
+			'owner':unit,
 			'str':"-"+dmg,
 			'active':true,
 			'rgb':'254,58,37',
-			'opacity':1,
+			'opacity':0,
 			'y':y,
 			'x':x
 		});
 	},
 	updateFloats: function() {
 		app.floats.forEach(function(float) {
-			console.log(float.owner.x);
-			if(float.opacity > 0) {
-				// var x = float.owner.x - ctx.measureText(float.str).width/2;
-				float.y -= 1;
-				// var y = float.owner.y - float.owner.size/2 - 4;
-				float.opacity -= 0.1;
-				ctx.fillStyle = "rgba("+float.rgb+","+1+")";
-				ctx.fillText(float.str, float.x, float.y);
-			} else {
-				float.active = false;
-			}
+			// if(float.owner.hp > 0) {
+				if(float.opacity < 1) {
+					ctx.font = "10px Helvetica";
+					float.y -= 1;
+					float.opacity += 0.05;
+					ctx.fillStyle = "rgba("+float.rgb+","+float.opacity+")";
+					ctx.fillText(float.str, float.x, float.y);
+				} else {
+					float.active = false;
+				}
+			// }
 		});
 		// Clear floats
 		app.floats = app.floats.filter(function(float) {
