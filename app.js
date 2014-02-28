@@ -4,7 +4,7 @@
 * - Expand your planetary empire
 */
 var canvas;
-$(document).ready(function() {
+window.onload = function() {
 	// Init app
 	canvas = document.getElementById('stage');
 	app.initialize();
@@ -14,7 +14,7 @@ $(document).ready(function() {
 	});
 	// Canvas Handlers
 	canvas.addEventListener('click', app.clickHandle);
-});
+}
 var app = {
 	width: 640,
 	height: 360,
@@ -77,6 +77,17 @@ var app = {
 						name: 'shock',
 						price: 40,
 						style: "#EFC94C"
+					}, {
+						x: 246,
+						y: 10,
+						size: 12,
+						boundx: 226,
+						boundy: 0,
+						boundw: 40,
+						boundh: 40,
+						name: 'rocket',
+						price: 60,
+						style: "#F3210A"
 					},
 				],
 				draw: function() {
@@ -87,7 +98,6 @@ var app = {
 					// Menu border
 					ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
 					ctx.fillRect(0, context.height, app.width, 1);
-
 					// Display cash
 					ctx.font = "bold 16px Helvetica";
 					ctx.fillStyle = "#F9E873";
@@ -529,6 +539,17 @@ var app = {
 			var style = "#EFC94C";
 			var image;
 		}
+		if(type == 'rocket') {
+			app.player.cash -= 60;
+			var size = 12;
+			var range = 40;
+			var ammo = 2;
+			var rate = 1500;
+			var hp = 30;
+			var damage = 8;
+			var style = "#F3210A";
+			var image;
+		}
 		app.towers.push({
 			'x':x,
 			'y':y,
@@ -717,6 +738,48 @@ var app = {
 				ctx.arc(x, y, projectile.size, 0, Math.PI * 2, true);
 				ctx.closePath();
 				ctx.fill();
+		    } else if(projectile.owner.type == 'rocket') {
+		    	if(projectile.explode == 0) {
+					app.moveTarget(projectile);
+			    	// Check collision
+			    	if(app.collideDetect(projectile, projectile.target)) {
+				    	// Return ammo
+				    	++projectile.owner.ammo;
+			    		// Explode
+			    		projectile.explode = 1;
+			    		for(i=0;i<app.enemies.length;i++) {
+			    			if(app.inRange(projectile,app.enemies[i])) {
+						    	app.enemies[i].hp -= (projectile.owner.damage/2);
+						    	if(app.enemies[i].hp <= 0) {
+							    	app.player.addCash(1);
+							    	app.enemies[i].active = false;
+						    	}
+			    			}
+			    		}
+			    		app.enemies = app.enemies.filter(function(enemy) {
+							return enemy.active;
+						});
+					}
+				} else if(projectile.explode == 1) {
+			    	// Explode, then remove projectile
+			    	projectile.explode = 2;
+			    	var innerRadius = 1;
+					var outerRadius = 20;
+					var gradient = ctx.createRadialGradient(projectile.x+projectile.size/2, projectile.y+projectile.size/2, innerRadius, projectile.x+projectile.size/2, projectile.y+projectile.size/2, outerRadius);
+					gradient.addColorStop(0, "rgba(239,201,76,0)");
+					gradient.addColorStop(1, "rgba(243,33,10,1)");
+			    	projectile.style = gradient;
+			    	projectile.size = 20;
+			    	window.setTimeout(function() {
+				    	projectile.active = false;
+					}, 200);
+				}
+		    	// Draw projectile
+			    ctx.fillStyle = projectile.style;
+				ctx.beginPath();
+				ctx.arc(projectile.x, projectile.y, projectile.size, 0, Math.PI * 2, true);
+				ctx.closePath();
+				ctx.fill();
 		    }
 		});
 		app.projectiles = app.projectiles.filter(function(projectile) {
@@ -842,30 +905,48 @@ var app = {
 					    current.shockStyle = "rgba(69,178,157,0)";
 					}, 200);
 		    		// Damage nearby enemies
-		    		console.log('Tick');
-		    		var num = 0;
 		    		for(i=0;i<app.enemies.length;i++) {
-		    			console.log('current: '+i);
 		    			if(app.inRange(unit,app.enemies[i])) {
 					    	app.enemies[i].hp -= unit.damage;
 					    	app.enemies[i].speed = 1;
-					    	console.log('enemy hp:'+app.enemies[i].hp);
 					    	if(app.enemies[i].hp <= 0) {
 						    	// app.removeEntity(app.enemies[i]);
 						    	// breaks loop too early
 						    	app.player.addCash(1);
 						    	app.enemies[i].active = false;
-						    	num++;
 					    	}
 		    			}
 		    		}
 		    		app.enemies = app.enemies.filter(function(enemy) {
 						return enemy.active;
 					});
-	    			console.log('max: '+app.enemies.length);
-		    		console.log('Tick kills: '+num);
 		    	}, unit.rate);
 				--unit.ammo;
+			}
+		} else if(unit.type == 'rocket') {
+			if(unit.ammo > 0) {
+				if(!unit.delay) {
+					app.projectiles.push({
+						'x':unit.x,
+						'y':unit.y,
+						'speed':3,
+						'target':unit.target,
+						'size':3,
+						'owner':unit,
+						'active':true,
+						'style':'#F1A20D',
+						'array':'projectiles',
+						'explode':0,
+						'range':20
+					});
+					--unit.ammo;
+					// Delayed rate of firing
+					unit.delay = true;
+					var current = unit;
+					window.setTimeout(function() {
+					    current.delay = false;
+					}, unit.rate);
+				}
 			}
 		}
 	},
@@ -908,6 +989,10 @@ var app = {
 				app.planet.style = "rgba(0,0,0,0)";
 			}	
 		}
+	},
+	damageEntity: function(unit, dmg) {
+		unit.hp -= dmg;
+
 	},
 	removeEntity: function(unit) {
 		var type = null;
