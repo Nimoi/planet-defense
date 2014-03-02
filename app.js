@@ -420,8 +420,13 @@ var app = {
 		},
 	},
 	initPlanet: function() {
+		function getColor() {
+			return app.randColor();
+		}
+		var randColor = getColor();
 		app.planet.shine = "rgba(255, 255, 255, 1)";
-		app.planet.style = app.randColor();
+		app.planet.defaultStyle = randColor;
+		app.planet.style = randColor;
 		app.planet.x = app.width/2;
 		app.planet.y = app.height/2;
 		app.planet.size = 100;
@@ -625,6 +630,7 @@ var app = {
 			'hp':hp,
 			'maxhp':hp,
 			'damage':damage,
+			'defaultStyle':style,
 			'style':style,
 			'image':image
 		});
@@ -664,6 +670,7 @@ var app = {
 				'hp':10,
 				'maxhp':10,
 				'damage':2,
+				'defaultStyle':"red",
 				'style':"red",
 				'active':true
 			});
@@ -790,12 +797,6 @@ var app = {
 			    	if(projectile.target.hp <= 0) {
 			    		app.removeEntity(projectile.target, projectile.target.type);
 			    	}
-			    	// Flash on hit
-			    	var normalStyle = projectile.target.style;
-			    	projectile.target.style = "#fff";
-			    	window.setTimeout(function() {
-					    projectile.target.style = normalStyle;
-					}, 25);
 
 			    	// Remove projectile
 			    	projectile.active = false;
@@ -952,18 +953,9 @@ var app = {
 				current.damageInterval = setInterval(function() {
 					if(unit.target) {
 						if(current.delay) {
-					    	// Flash on hit
-							//var normalStyle = unit.target.style;
-							//unit.target.style = "#fff";
-							//window.setTimeout(function() {
-							//	if(unit.target) {
-							// 	    unit.target.style = normalStyle;
-							// 	}
-							// }, 25);
 				    		// Remove health
-					    	// unit.target.hp -= unit.damage;
 					    	app.damageEntity(unit.target, unit.damage);
-					    	// console.log("Enemy HP: "+unit.target.hp);
+					    	// Remove entity
 					    	if(unit.target.hp <= 0) {
 					    		clearInterval(current.damageInterval);
 					    		current.damageInterval = 0;
@@ -1070,13 +1062,21 @@ var app = {
 	},
 	floats: [],
 	damageEntity: function(unit, dmg) {
+		// Damage
 		unit.hp -= dmg;
+		// Flash on hit
+    	unit.style = "#fff";
+    	console.log(unit.style);
+	    if(unit == app.planet) {
+	    	console.log("PLANET HIT! style:");
+	    	console.log(app.planet.style);
+	    }
+    	window.setTimeout(function() {
+		    unit.style = unit.defaultStyle;
+		}, 50);
+		// Float damage on crit
 		var str = "-"+dmg;
 		ctx.font = "12px Helvetica";
-
-		// Testing health bars
-		// ctx.fillStyle = "rgba(25, 25, 25, 0.5)";
-		// ctx.fillRect(0, 0, app.width, context.height);
 		var crit = 0;
 		if(crit) {
 			function getCoords() {
@@ -1088,7 +1088,6 @@ var app = {
 			var coords = getCoords();
 			var x = coords.x - ctx.measureText(str).width/2;
 			var y = coords.y - unit.size/2 - 4;
-			// console.log('x: '+x+' y: '+y);
 			var opacity = 1;
 			app.floats.push({
 				'owner':unit,
