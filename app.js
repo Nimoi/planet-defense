@@ -295,13 +295,7 @@ var app = {
 				}
 				// Spawn enemies
 				if(!app.menus.gameOver.active) {
-					if(Math.random() < app.spawnRate) {
-						app.spawnEnemies(app.numEnemies);
-						if(Math.random() < 0.5) {
-							app.spawnRate += 0.001;
-							ntils.colorLog("Spawn rate: "+app.spawnRate, "orangered");
-						}
-					}
+					app.spawnWave();
 				}
 				// Display tooltip
 				if(app.tooltip) {
@@ -398,7 +392,7 @@ var app = {
 			// Get mouse position
 			var mousePos = app.getMousePos(canvas, e);
 			mousePos.size = 1;
-			console.log(mousePos);
+			// console.log(mousePos);
 			// Tower placement
 			if(app.placeNewTower) {
 				if(mousePos.y > app.menus.gameplay.towers.height) {
@@ -422,6 +416,19 @@ var app = {
 					app.tooltip = false;
 				}
 				if(mousePos.y <= app.menus.gameplay.towers.height) { // Clicked on Menu
+					function checkButton(x,y,w,h) {
+						var x1 = x;
+						var x2 = x1 + w;
+						var y1 = y;
+						var y2 = y1 + h;
+						if(mousePos.x > x1 && mousePos.x < x2) {
+							if(mousePos.y > y1 && mousePos.y < y2) {
+								return true;
+							} else {
+								return false;
+							}
+						}
+					}
 					// Tower clicked
 					var current = app.menus.gameplay.towers.buttons;
 					for(i=0;i < current.length;i++) {
@@ -435,19 +442,6 @@ var app = {
 					if(checkButton(current.x,current.y,current.w,current.h)) {
 						if(app.state.current == 'gameplay') {
 							app.menus.pause.toggle();
-						}
-					}
-					function checkButton(x,y,w,h) {
-						var x1 = x;
-						var x2 = x1 + w;
-						var y1 = y;
-						var y2 = y1 + h;
-						if(mousePos.x > x1 && mousePos.x < x2) {
-							if(mousePos.y > y1 && mousePos.y < y2) {
-								return true;
-							} else {
-								return false;
-							}
 						}
 					}
 				}
@@ -571,12 +565,22 @@ var app = {
 			'image':image
 		});
 	},
+	spawnWave: function() {
+		if(Math.random() < app.spawnRate) {
+			app.spawnEnemies(app.numEnemies);
+			if(Math.random() < 0.5) {
+				app.spawnRate += 0.001;
+				ntils.colorLog("Spawn rate: "+app.spawnRate, "orangered");
+			}
+		}
+	},
 	// Generate enemies
 	spawnEnemies: function(num) {
 		for(i=0; i < num; i++) {
 			var size = 10;
 			var x = app.width+(Math.random()*60)-10;
-			var y = (app.height/2)+(Math.random()*60)-10;
+			// var y = (app.height/2)+(Math.random()*60)-10;
+			var y = ~~((Math.random()*(app.height-40))+40);
 			var range = 50;
 			var speed = 2;
 			var ammo = 2;
@@ -694,7 +698,6 @@ var app = {
 			    	if(projectile.target.hp <= 0) {
 			    		app.removeEntity(projectile.target, projectile.target.type);
 			    	}
-			    	// app.checkHealth(projectile.target);
 			    	// Flash on hit
 			    	var normalStyle = projectile.target.style;
 			    	projectile.target.style = "#fff";
@@ -971,28 +974,6 @@ var app = {
 			return false;
 		} else {
 			return true;
-		}
-	},
-	checkHealth: function(unit) { // Going to remove this!
-		if(unit.hp <= 0) {
-			if(unit.array != 'base') {
-				var type;
-				if(unit.array == 'player') {
-					type = app.towers;
-				} else if(unit.array == 'creep') {
-					type = app.enemies;
-				} else {
-					console.log("Unidentified object shot:");
-					console.log(unit);
-				}
-				// Remove unit from type
-				app.removeEntity(unit);
-			} else {
-				// Planet
-				console.log(app.planet.hp);
-				app.planet.shine = "rgba(0,0,0,0)";
-				app.planet.style = "rgba(0,0,0,0)";
-			}	
 		}
 	},
 	floats: [],
