@@ -294,6 +294,10 @@ var app = {
 				app.drawStars();
 				app.sun.draw();
 				app.drawPlanet();
+				// Particles
+				if(app.particles.items.length > 0) {
+					app.particles.draw();
+				}
 				// Move projectiles
 				if(app.projectiles.length > 0) {
 					app.updateProjectiles();
@@ -319,8 +323,8 @@ var app = {
 					app.spawnWave();
 				}
 				// Display tooltip
-				if(app.tooltip) {
-					app.displayTooltip(); 
+				if(app.tooltip.active) {
+					app.tooltip.draw(); 
 				}
 				// Game Over
 				if(app.menus.gameOver.active) {
@@ -475,19 +479,16 @@ var app = {
 				}
 			} else {
 				// Display tooltips
-				if(!app.tooltip) {
-					// Select tower
-					app.towers.forEach(function(tower) {
-						if(app.collideDetect(mousePos, tower)) {
-							console.log("Tower clicked!");
-							app.displayTooltip(tower);
-							app.tooltip = true;
-						}
-					});
-				} else { // Deselect (select nothing)
-					app.tooltip = false;
-				}
-				if(mousePos.y <= app.menus.gameplay.towers.height) { // Clicked on Menu
+				app.tooltip.active = false;
+				app.towers.forEach(function(tower) {
+					if(app.collideDetect(mousePos, tower)) {
+						console.log("Tower clicked!");
+						app.tooltip.target = tower;
+						app.tooltip.active = true;
+					}
+				});
+				// Clicked on Menu
+				if(mousePos.y <= app.menus.gameplay.towers.height) {
 					function checkButton(x,y,w,h) {
 						var x1 = x;
 						var x2 = x1 + w;
@@ -578,15 +579,28 @@ var app = {
 			}
 		},
 	},
-	displayTooltip: function(unit) {
-		ctx.strokeStyle = "rgba(255,255,255,0.4)";
-		ctx.lineWidth = 0.5;
-		ctx.strokeRect(0, 260, 220, 100);
-		ctx.fillStyle = "rgba(0,0,0,0.4)";
-		ctx.fillRect(0, 260, 220, 100);
-	},
-	displayHealth: function(unit) {
-
+	tooltip: {
+		active: false,
+		target: 0,
+		draw: function() {
+			if(app.tooltip.target) {
+				var unit = app.tooltip.target;
+				// Show range
+				ctx.fillStyle = "rgba(200,200,200,0.2)";
+				var x = unit.x +(unit.size/2);
+				var y = unit.y +(unit.size/2);
+				ctx.beginPath();
+				ctx.arc(x, y, unit.range, 0, Math.PI * 2, true);
+				ctx.closePath();
+				ctx.fill();
+				// Panel BG
+				ctx.strokeStyle = "rgba(255,255,255,0.4)";
+				ctx.lineWidth = 0.5;
+				ctx.strokeRect(0, 260, 220, 100);
+				ctx.fillStyle = "rgba(0,0,0,0.4)";
+				ctx.fillRect(0, 260, 220, 100);
+			}
+		},
 	},
 	buildTower: function(x, y, tower) {
 		if(tower.type == 'basic') {
@@ -1065,7 +1079,7 @@ var app = {
 		}
 	},
 	collideDetect: function(unit1, unit2) {
-		// TODO: Better collision detection. Optimize.
+		// TODO: Better collision detection
 		var distance = Math.sqrt(Math.pow(unit1.x - unit2.x, 2) + Math.pow(unit1.y - unit2.y, 2)).toFixed(2);
 		if(distance > unit2.size) {
 			return false;
@@ -1127,6 +1141,81 @@ var app = {
 			return float.active;
 		});
 	},
+	particles: {
+		/* Mostly adapted from:
+		 * http://thecodeplayer.com/walkthrough/canvas-fireworks-tutorial
+		 */
+		hue: 0,
+		items: [],
+		init: function(x, y) {
+			var particleCount = 20;
+			while( particleCount-- ) {
+				app.particles.add(x,y);
+			}
+		},
+		add: function(x, y) {
+			var p = app.particles;
+			var coordinates = [];
+			var coordinateCount = 3;
+			while(coordinateCount--) {
+				coordinates.push([x, y]);
+			}
+			app.particles.items.push({
+				x: x,
+				y: y,
+				// set a random angle in all possible directions, in radians
+				angle: app.random( 0, Math.PI * 2 ),
+				speed: app.random( 1, 10 ),
+				// friction will slow the particle down
+				friction: 0.99,
+				// track the past coordinates of each particle to create a trail effect, increase the coordinate count to create more prominent trails
+				coordinates: coordinates,
+				// gravity will be applied and pull the particle down
+				gravity: 0.1, // This is space!
+				// set the hue to a app.random number +-20 of the overall hue variable
+				hue: app.random( p.hue - 20, p.hue + 20 ),
+				brightness: app.random( 50, 80 ),
+				alpha: 1,
+				// set how fast the particle fades out
+				decay: app.random( 0.015, 0.03 ),
+				active: true
+			});
+		},
+		draw: function() {
+			app.particles.items.forEach(function(item) {
+				// remove last item in coordinates array
+				item.coordinates.pop();
+				// add current coordinates to the start of the array
+				item.coordinates.unshift( [ item.x, item.y ] );
+				// slow down the particle
+				item.speed *= item.friction;
+				// apply velocity
+				item.x += Math.cos( item.angle ) * item.speed;
+				item.y += Math.sin( item.angle ) * item.speed + item.gravity;
+				// fade out the particle
+				item.alpha -= item.decay;
+
+				// remove the particle once the alpha is low enough, based on the passed in index
+				if( item.alpha <= item.decay ) {
+					item.active = false;
+				}
+				// Draw
+				ctx.beginPath();
+				// move to the last tracked coordinates in the set, then draw a line to the current x and y
+				ctx.moveTo(item.coordinates[item.coordinates.length - 1][0], item.coordinates[item.coordinates.length - 1][1]);
+				ctx.lineTo(item.x, item.y);
+				ctx.strokeStyle = 'hsla(' + item.hue + ', 100%, ' + item.brightness + '%, ' + item.alpha + ')';
+				ctx.stroke();
+				app.particles.hue += 0.5;
+				if(app.particles.hue > 30) {
+					app.particles.hue = 0;
+				}
+			});
+			app.particles.items = app.particles.items.filter(function(p) {
+				return p.active;
+			});
+		},
+	},
 	removeEntity: function(unit) {
 		var type = null;
 		console.log('removing: '+unit.array);
@@ -1143,6 +1232,7 @@ var app = {
 					if(type == app.enemies) {
 						if(type[i].type == 'basic') {
 							app.player.addCash(1);
+							app.particles.init(unit.x, unit.y);
 						} 
 					}
 					type.splice(i, 1);
@@ -1154,6 +1244,9 @@ var app = {
 			app.planet.shine = "rgba(0,0,0,0)";
 			app.planet.style = "rgba(0,0,0,0)";
 		}
+	},
+	random: function(min, max) {
+		return Math.random() * (max - min) + min;
 	},
 	// Generate a random color
 	randColor: function() {
