@@ -586,7 +586,7 @@ var app = {
 			if(app.tooltip.target) {
 				var unit = app.tooltip.target;
 				// Show range
-				ctx.fillStyle = "rgba(200,200,200,0.2)";
+				ctx.fillStyle = "rgba(100,100,100,0.2)";
 				var x = unit.x +(unit.size/2);
 				var y = unit.y +(unit.size/2);
 				ctx.beginPath();
@@ -594,13 +594,121 @@ var app = {
 				ctx.closePath();
 				ctx.fill();
 				// Panel BG
+				x = 0;
+				y = 260;
+				var w = 220;
+				var h = 100;
 				ctx.strokeStyle = "rgba(255,255,255,0.4)";
 				ctx.lineWidth = 0.5;
-				ctx.strokeRect(0, 260, 220, 100);
+				ctx.strokeRect(x, y, w, h);
 				ctx.fillStyle = "rgba(0,0,0,0.4)";
-				ctx.fillRect(0, 260, 220, 100);
+				ctx.fillRect(x, y, w, h);
+				// Stats
+				ctx.font = "14px Helvetica";
+				ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+				var str = "Level "+unit.level;
+				x += 10;
+				y += 20;
+				ctx.fillText(str, x, y);
+				ctx.font = "11px Helvetica";
+				// Damage
+				y += 20;
+				str = "Damage: "+unit.damage;
+				ctx.fillText(str, x, y);
+				// Range
+				y += 20;
+				str = "Range: "+unit.range;
+				ctx.fillText(str, x, y);
+				// Attack Rate
+				y += 20;
+				str = "Fire Rate: "+(unit.rate/100).toFixed(1);
+				ctx.fillText(str, x, y);
+				// Upgrades
+				if(unit.level < 5) {
+					var upgrades = app.level.next(unit);
+					ctx.font = "14px Helvetica";
+					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+					x = 120;
+					y = 280;
+					str = "Level "+upgrades.level;
+					ctx.fillText(str, x, y);
+					ctx.font = "11px Helvetica";
+					// Damage
+					y += 20;
+					str = "Damage: ";
+					ctx.fillText(str, x, y);
+					var strlen = ctx.measureText(str).width;
+					str = unit.damage + upgrades.damage;
+					ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
+					ctx.fillText(str, x+strlen, y);
+					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+					// Range
+					y += 20;
+					str = "Range: ";
+					ctx.fillText(str, x, y);
+					var strlen = ctx.measureText(str).width;
+					str = unit.range + upgrades.range;
+					ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
+					ctx.fillText(str, x+strlen, y);
+					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+					// Attack Rate
+					y += 20;
+					str = "Fire Rate: ";
+					ctx.fillText(str, x, y);
+					var strlen = ctx.measureText(str).width;
+					str = ((unit.rate-upgrades.rate)/100).toFixed(1);
+					ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
+					ctx.fillText(str, x+strlen, y);
+					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+				}
 			}
 		},
+	},
+	level : {
+		next: function(tower) {
+			var level = tower.level + 1;
+			var price = level*tower.price;
+			if(tower.type == 'basic') {
+				var range = 10;
+				var ammo = 1;
+				var rate = 100;
+				var hp = 10;
+				var damage = 2;
+				var image;
+			} else if(tower.type == 'laser') {
+				var range = 7;
+				var ammo = 0;
+				var rate = 0;
+				var hp = 10;
+				var damage = 2;
+				var image;
+			} else if(tower.type == 'shock') {
+				var range = 10;
+				var ammo = 0;
+				var rate = 100;
+				var hp = 10;
+				var damage = 2;
+				var image;
+			} else if(tower.type == 'rocket') {
+				var range = 10;
+				var ammo = 1;
+				var rate = 100;
+				var hp = 10;
+				var damage = 3;
+				var image;
+			}
+			upgrades = {
+				'range':range,
+				'ammo':ammo,
+				'rate':rate,
+				'maxhp':hp,
+				'damage':damage,
+				'image':image,
+				'level':level,
+				'price':price
+			};
+			return upgrades;
+		}
 	},
 	buildTower: function(x, y, tower) {
 		if(tower.type == 'basic') {
@@ -659,7 +767,9 @@ var app = {
 			'damage':damage,
 			'defaultStyle':style,
 			'style':style,
-			'image':image
+			'image':image,
+			'level':1,
+			'price':(tower.price*1.3).toFixed(1)
 		});
 	},
 	spawnWave: function() {
@@ -678,7 +788,7 @@ var app = {
 			var x = app.width+(Math.random()*60)-10;
 			// var y = (app.height/2)+(Math.random()*60)-10;
 			var y = ~~((Math.random()*(app.height-40))+40);
-			var range = 50;
+			var range = 40;
 			var speed = 2;
 			var ammo = 2;
 			var rate = 500; // rate between shots
@@ -1222,34 +1332,36 @@ var app = {
 		},
 	},
 	removeEntity: function(unit) {
-		// Explode before removing reference
-		app.particles.init(unit);
-		// Remove from proper array
-		var type = null;
-		console.log('removing: '+unit.array);
-		if(unit.array == 'projectiles') {
-			type = app.projectiles;
-		} else if(unit.array == 'towers') {
-			type = app.towers;
-		} else if(unit.array == 'enemies') {
-			type = app.enemies;
-		}
-		if(type) {
-			for(i=0;i<type.length;i++) {
-				if(unit == type[i]) {
-					if(type == app.enemies) {
-						if(type[i].type == 'basic') {
-							app.player.addCash(1);
-						} 
-					}
-					type.splice(i, 1);
-				}
+		if(unit) {
+			// Explode before removing reference
+			app.particles.init(unit);
+			// Remove from proper array
+			var type = null;
+			console.log('removing: '+unit.array);
+			if(unit.array == 'projectiles') {
+				type = app.projectiles;
+			} else if(unit.array == 'towers') {
+				type = app.towers;
+			} else if(unit.array == 'enemies') {
+				type = app.enemies;
 			}
-		} else {
-			// Planet
-			console.log(app.planet.hp);
-			app.planet.shine = "rgba(0,0,0,0)";
-			app.planet.style = "rgba(0,0,0,0)";
+			if(type) {
+				for(i=0;i<type.length;i++) {
+					if(unit == type[i]) {
+						if(type == app.enemies) {
+							if(type[i].type == 'basic') {
+								app.player.addCash(1);
+							} 
+						}
+						type.splice(i, 1);
+					}
+				}
+			} else {
+				// Planet
+				console.log(app.planet.hp);
+				app.planet.shine = "rgba(0,0,0,0)";
+				app.planet.style = "rgba(0,0,0,0)";
+			}
 		}
 	},
 	random: function(min, max) {
