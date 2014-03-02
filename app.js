@@ -268,10 +268,12 @@ var app = {
 	state: {
 		current: 'gameplay',
 		gameplay: function() {
+			// Test
 			// Game is active
 			if(!app.menus.pause.active) {
 				app.clearCanvas();
 				app.drawStars();
+				app.sun.draw();
 				app.drawPlanet();
 				// Move projectiles
 				if(app.projectiles.length > 0) {
@@ -333,9 +335,9 @@ var app = {
 		ctx.clearRect(0,0,app.width,app.height);
 	},
 	initStars: function() {
-        for (i=0; i<=70; i++) {
+        for (i=0; i<=140; i++) {
           // Get random positions for stars
-          var starx = ~~(Math.random() * app.width);
+          var starx = ~~(Math.random() * (app.width*2));
           var stary = ~~(Math.random() * app.height);
 
           // Make the stars white
@@ -348,13 +350,54 @@ var app = {
 	},
 	drawStars: function() {
 		for (i=0; i < app.stars.length; i++) {
-          // Draw the given star
-          ctx.fillStyle = app.stars[i][0];
-          ctx.beginPath();
-          ctx.arc(app.stars[i][1], app.stars[i][2], app.stars[i][3], 0, Math.PI * 2, true);
-          ctx.closePath();
-          ctx.fill();
-        }
+			app.stars[i][1] += 0.2;
+			if(app.stars[i][1] > (app.width*2)) {
+				app.stars[i][1] = -app.stars[i][3];
+			}
+			var x = app.stars[i][1];
+			var y = app.stars[i][2];
+			// Draw the given star
+			ctx.fillStyle = app.stars[i][0];
+			ctx.beginPath();
+			ctx.arc(x, y, app.stars[i][3], 0, Math.PI * 2, true);
+			ctx.closePath();
+			ctx.fill();
+		}
+	},
+	sun: {
+		pos: {
+			x:-200,
+			y:50
+		},
+		draw: function() {
+			// Sun
+			var size = 20;
+			var glow = 200;
+			app.sun.pos.x += 0.2;
+			app.sun.pos.y += 0.02;
+			if(app.sun.pos.x > (app.width*2)) {
+				app.sun.pos.x = -glow;
+				app.sun.pos.y = 50;
+			}
+			var x = app.sun.pos.x;
+			var y = app.sun.pos.y;
+			ctx.fillStyle = "#EEF66C";
+			ctx.beginPath();
+			ctx.arc(x, y, size, 0, Math.PI * 2, true);
+			ctx.closePath();
+			ctx.fill();
+			// Glow
+			var innerRadius = 1;
+			var outerRadius = glow;
+			var gradient = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
+			gradient.addColorStop(0, "rgba(253,184,19,0.15)");
+			gradient.addColorStop(1, "rgba(255,255,255,0)");
+	    	ctx.fillStyle = gradient;
+	    	ctx.beginPath();
+			ctx.arc(x, y, glow, 0, Math.PI * 2, true);
+			ctx.closePath();
+			ctx.fill();
+		},
 	},
 	initPlanet: function() {
 		app.planet.shine = "rgba(255, 255, 255, 1)";
@@ -981,26 +1024,33 @@ var app = {
 		unit.hp -= dmg;
 		var str = "-"+dmg;
 		ctx.font = "12px Helvetica";
-		function getCoords() {
-			return {
-				x:unit.x,
-				y:unit.y
-			};
+
+		// Testing health bars
+		// ctx.fillStyle = "rgba(25, 25, 25, 0.5)";
+		// ctx.fillRect(0, 0, app.width, context.height);
+		var crit = 0;
+		if(crit) {
+			function getCoords() {
+				return {
+					x:unit.x,
+					y:unit.y
+				};
+			}
+			var coords = getCoords();
+			var x = coords.x - ctx.measureText(str).width/2;
+			var y = coords.y - unit.size/2 - 4;
+			// console.log('x: '+x+' y: '+y);
+			var opacity = 1;
+			app.floats.push({
+				'owner':unit,
+				'str':"-"+dmg,
+				'active':true,
+				'rgb':'254,58,37',
+				'opacity':0,
+				'y':y,
+				'x':x
+			});
 		}
-		var coords = getCoords();
-		var x = coords.x - ctx.measureText(str).width/2;
-		var y = coords.y - unit.size/2 - 4;
-		// console.log('x: '+x+' y: '+y);
-		var opacity = 1;
-		app.floats.push({
-			'owner':unit,
-			'str':"-"+dmg,
-			'active':true,
-			'rgb':'254,58,37',
-			'opacity':0,
-			'y':y,
-			'x':x
-		});
 	},
 	updateFloats: function() {
 		app.floats.forEach(function(float) {
