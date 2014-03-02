@@ -45,6 +45,7 @@ var app = {
 			towers: {
 				height: 40,
 				buttons: [{
+						name: 'basic',
 						x: 120,
 						y: 10,
 						size: 12,
@@ -52,10 +53,11 @@ var app = {
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
-						name: 'basic',
 						price: 15,
+						range: 60,
 						style: 'rgba(0,132,255,1)'
 					}, {
+						name: 'laser',
 						x: 162,
 						y: 10,
 						size: 12,
@@ -63,10 +65,11 @@ var app = {
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
-						name: 'laser',
 						price: 25,
-						style: "#DA0734"
+						range: 50,
+						style: "#FF8638"
 					}, {
+						name: 'shock',
 						x: 204,
 						y: 10,
 						size: 12,
@@ -74,10 +77,11 @@ var app = {
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
-						name: 'shock',
 						price: 40,
+						range: 20,
 						style: "#EFC94C"
 					}, {
+						name: 'rocket',
 						x: 246,
 						y: 10,
 						size: 12,
@@ -85,8 +89,8 @@ var app = {
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
-						name: 'rocket',
 						price: 60,
+						range: 40,
 						style: "#F3210A"
 					},
 				],
@@ -465,7 +469,7 @@ var app = {
 			if(app.placeNewTower) {
 				if(mousePos.y > app.menus.gameplay.towers.height) {
 					if(!app.addTower.checkNewCollide()) {
-						app.buildTower(app.newTower.x, app.newTower.y, app.newTower.type);
+						app.buildTower(app.newTower.x, app.newTower.y, app.newTower);
 						app.placeNewTower = false;
 					}
 				}
@@ -528,6 +532,7 @@ var app = {
 					'price':tower.price,
 					'style':tower.style,
 					'size':tower.size,
+					'range':tower.range
 				}
 				canvas.addEventListener('mousemove', app.addTower.setNewPos);
 			}
@@ -535,8 +540,8 @@ var app = {
 		setNewPos: function(e) {
 			var mousePos = app.getMousePos(canvas, e);
 			var size = 12;
-			app.newTower.x = mousePos.x;
-			app.newTower.y = mousePos.y;
+			app.newTower.x = mousePos.x-(app.newTower.size/2);
+			app.newTower.y = mousePos.y-(app.newTower.size/2);
 		},
 		checkNewCollide: function() {
 			var noRoom = false;
@@ -553,9 +558,21 @@ var app = {
 		},
 		updateNewTower: function() {
 			if(app.newTower.y > app.menus.gameplay.towers.height) {
+				// Tower range
+				ctx.fillStyle = "rgba(200,200,200,0.2)";
+				if(app.addTower.checkNewCollide()) {
+					ctx.fillStyle = "rgba(199,27,27,0.1)";
+				}
+				var x = app.newTower.x +(app.newTower.size/2);
+				var y = app.newTower.y +(app.newTower.size/2);
+				ctx.beginPath();
+				ctx.arc(x, y, app.newTower.range, 0, Math.PI * 2, true);
+				ctx.closePath();
+				ctx.fill();
+				// Tower
 				ctx.fillStyle = app.newTower.style;
 				if(app.addTower.checkNewCollide()) {
-					ctx.fillStyle = "rgba(255,255,255,0.5)";
+					ctx.fillStyle = "rgba(199,27,27,0.5)";
 				}
 				ctx.fillRect(app.newTower.x, app.newTower.y, app.newTower.size, app.newTower.size);
 			}
@@ -571,11 +588,10 @@ var app = {
 	displayHealth: function(unit) {
 
 	},
-	buildTower: function(x, y, type) {
-		if(type == 'basic') {
+	buildTower: function(x, y, tower) {
+		if(tower.type == 'basic') {
 			app.player.cash -= 15;
 			var size = 12;
-			var range = 80;
 			var ammo = 3;
 			var rate = 500;
 			var hp = 20;
@@ -583,21 +599,19 @@ var app = {
 			var style = "rgba(0,132,255,1)";
 			var image;
 		}
-		if(type == 'laser') {
+		if(tower.type == 'laser') {
 			app.player.cash -= 25;
 			var size = 12;
-			var range = 60;
 			var ammo = 1;
 			var rate = 100;
 			var hp = 15;
 			var damage = 1;
-			var style = "#DA0734";
+			var style = "#FF8638";
 			var image;
 		}
-		if(type == 'shock') {
+		if(tower.type == 'shock') {
 			app.player.cash -= 40;
 			var size = 12;
-			var range = 20;
 			var ammo = 1;
 			var rate = 1000;
 			var hp = 25;
@@ -605,10 +619,9 @@ var app = {
 			var style = "#EFC94C";
 			var image;
 		}
-		if(type == 'rocket') {
+		if(tower.type == 'rocket') {
 			app.player.cash -= 60;
 			var size = 12;
-			var range = 40;
 			var ammo = 2;
 			var rate = 1500;
 			var hp = 30;
@@ -620,12 +633,12 @@ var app = {
 			'x':x,
 			'y':y,
 			'size':size,
-			'range':range,
+			'range':tower.range,
 			'ammo':ammo,
 			'rate':rate,
 			'delay': false,
 			'target':'',
-			'type':type,
+			'type':tower.type,
 			'array':'towers',
 			'hp':hp,
 			'maxhp':hp,
@@ -1066,11 +1079,6 @@ var app = {
 		unit.hp -= dmg;
 		// Flash on hit
     	unit.style = "#fff";
-    	console.log(unit.style);
-	    if(unit == app.planet) {
-	    	console.log("PLANET HIT! style:");
-	    	console.log(app.planet.style);
-	    }
     	window.setTimeout(function() {
 		    unit.style = unit.defaultStyle;
 		}, 50);
