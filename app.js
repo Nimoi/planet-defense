@@ -172,6 +172,22 @@ var app = {
 					ctx.fillText(str, x, y);
 				},
 			},
+			health: {
+				draw: function() {
+					// Background
+					w = 100;
+					h = 8;
+					var x = (app.width/2) - (w/2);
+					var y = 42;
+					ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+					ctx.fillRect(x, y, w, h);
+					// Health
+					y += 1;
+					h -= 2;
+					ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
+					ctx.fillRect(x, y, app.planet.hp, h);
+				},
+			},
 		},
 		pause: {
 			active: false,
@@ -310,6 +326,7 @@ var app = {
 					// Only draw UI while game is active
 					app.menus.gameplay.towers.draw();
 					app.menus.gameplay.timer.draw();
+					app.menus.gameplay.health.draw();
 					app.menus.pause.button.draw();
 				}
 			}
@@ -350,9 +367,11 @@ var app = {
 	},
 	drawStars: function() {
 		for (i=0; i < app.stars.length; i++) {
-			app.stars[i][1] += 0.2;
-			if(app.stars[i][1] > (app.width*2)) {
-				app.stars[i][1] = -app.stars[i][3];
+			if(app.planet.hp > 0) {
+				app.stars[i][1] += 0.2;
+				if(app.stars[i][1] > (app.width*2)) {
+					app.stars[i][1] = -app.stars[i][3];
+				}
 			}
 			var x = app.stars[i][1];
 			var y = app.stars[i][2];
@@ -373,11 +392,13 @@ var app = {
 			// Sun
 			var size = 20;
 			var glow = 200;
-			app.sun.pos.x += 0.2;
-			app.sun.pos.y += 0.02;
-			if(app.sun.pos.x > (app.width*2)) {
-				app.sun.pos.x = -glow;
-				app.sun.pos.y = 50;
+			if(app.planet.hp > 0) {
+				app.sun.pos.x += 0.2;
+				app.sun.pos.y += 0.02;
+				if(app.sun.pos.x > (app.width*2)) {
+					app.sun.pos.x = -glow;
+					app.sun.pos.y = 50;
+				}
 			}
 			var x = app.sun.pos.x;
 			var y = app.sun.pos.y;
