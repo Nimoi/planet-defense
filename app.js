@@ -402,7 +402,7 @@ var app = {
 	initPlanet: function() {
 		app.planet.shine = "rgba(255, 255, 255, 1)";
 		app.planet.style = app.randColor();
-		app.planet.x = 20;
+		app.planet.x = app.width/2;
 		app.planet.y = app.height/2;
 		app.planet.size = 100;
 		app.planet.hp = 100;
@@ -698,6 +698,7 @@ var app = {
 	updateEnemies: function() {
 		app.enemies.forEach(function(enemy) {
 			ctx.save();
+			// enemy.x += 0.2;
 			var transx = enemy.x + 0.5*enemy.size;
 			var transy = enemy.y + 0.5*enemy.size;
 			ctx.translate(transx, transy);
