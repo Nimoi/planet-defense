@@ -284,7 +284,6 @@ var app = {
 	state: {
 		current: 'gameplay',
 		gameplay: function() {
-			// Test
 			// Game is active
 			if(!app.menus.pause.active) {
 				app.clearCanvas();
@@ -368,7 +367,7 @@ var app = {
 	drawStars: function() {
 		for (i=0; i < app.stars.length; i++) {
 			if(app.planet.hp > 0) {
-				app.stars[i][1] += 0.2;
+				app.stars[i][1] += 0.19;
 				if(app.stars[i][1] > (app.width*2)) {
 					app.stars[i][1] = -app.stars[i][3];
 				}
@@ -624,6 +623,7 @@ var app = {
 			'type':type,
 			'array':'towers',
 			'hp':hp,
+			'maxhp':hp,
 			'damage':damage,
 			'style':style,
 			'image':image
@@ -662,6 +662,7 @@ var app = {
 				'type':'basic',
 				'array':'enemies',
 				'hp':10,
+				'maxhp':10,
 				'damage':2,
 				'style':"red",
 				'active':true
@@ -711,8 +712,20 @@ var app = {
 				}
 			}
 
-			if(tower.showHealth) {
-				// Display health
+			// Health bar
+			if(tower.hp < tower.maxhp) {
+				// Background
+				w = tower.size;
+				h = 4;
+				var x = tower.x;
+				var y = tower.y - 5;
+				ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+				ctx.fillRect(x, y, w, h);
+				// Health
+				y += 1;
+				h -= 2;
+				ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
+				ctx.fillRect(x, y, tower.hp, h);
 			}
 		});
 	},
@@ -730,13 +743,12 @@ var app = {
 			ctx.translate(-transx, -transy);
 			ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
 			ctx.restore();
-
+			// Targetting
 			if(enemy.target == app.planet) {
 				if(app.mode == 'hard') {
 					app.findTarget(enemy, 'towers');
 				}
 			}
-
 			// Is target in range?
 			if(app.inRange(enemy, enemy.target)) {
 				// Is target alive?
@@ -747,6 +759,21 @@ var app = {
 				}
 			} else {
 				app.moveTarget(enemy);
+			}
+			// Health bar
+			if(enemy.hp < enemy.maxhp) {
+				// Background
+				w = enemy.size;
+				h = 4;
+				var x = enemy.x;
+				var y = enemy.y - 5;
+				ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+				ctx.fillRect(x, y, w, h);
+				// Health
+				y += 1;
+				h -= 2;
+				ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
+				ctx.fillRect(x, y, enemy.hp, h);
 			}
 		});
 	},
