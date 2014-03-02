@@ -1092,9 +1092,11 @@ var app = {
 		// Damage
 		unit.hp -= dmg;
 		// Flash on hit
-    	unit.style = "#fff";
+    	unit.style = "rgba(255,100,100,1)";
     	window.setTimeout(function() {
-		    unit.style = unit.defaultStyle;
+    		if(unit.hp > 0 && unit) {
+			    unit.style = unit.defaultStyle;
+    		}
 		}, 50);
 		// Float damage on crit
 		var str = "-"+dmg;
@@ -1147,16 +1149,19 @@ var app = {
 		 */
 		hue: 0,
 		items: [],
-		init: function(x, y) {
+		init: function(unit) {
 			var particleCount = 20;
+			if(unit == app.planet) {
+				particleCount = 200;
+			}
 			while( particleCount-- ) {
-				app.particles.add(x,y);
+				app.particles.add(unit.x,unit.y);
 			}
 		},
 		add: function(x, y) {
 			var p = app.particles;
 			var coordinates = [];
-			var coordinateCount = 3;
+			var coordinateCount = 2;
 			while(coordinateCount--) {
 				coordinates.push([x, y]);
 			}
@@ -1217,6 +1222,9 @@ var app = {
 		},
 	},
 	removeEntity: function(unit) {
+		// Explode before removing reference
+		app.particles.init(unit);
+		// Remove from proper array
 		var type = null;
 		console.log('removing: '+unit.array);
 		if(unit.array == 'projectiles') {
@@ -1232,7 +1240,6 @@ var app = {
 					if(type == app.enemies) {
 						if(type[i].type == 'basic') {
 							app.player.addCash(1);
-							app.particles.init(unit.x, unit.y);
 						} 
 					}
 					type.splice(i, 1);
