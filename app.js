@@ -439,7 +439,8 @@ var app = {
 		app.planet.y = app.height/2;
 		app.planet.size = 100;
 		app.planet.hp = 100;
-		app.planet.array = "base";
+		app.planet.array = 0;
+		app.planet.alive = true;
 	},
 	drawPlanet: function() {
 		var x = app.planet.x;
@@ -761,7 +762,7 @@ var app = {
 			'delay': false,
 			'target':'',
 			'type':tower.type,
-			'array':'towers',
+			'array':app.towers,
 			'hp':hp,
 			'maxhp':hp,
 			'damage':damage,
@@ -769,7 +770,8 @@ var app = {
 			'style':style,
 			'image':image,
 			'level':1,
-			'price':(tower.price*1.3).toFixed(1)
+			'price':(tower.price*1.3).toFixed(1),
+			'alive':true
 		});
 	},
 	spawnWave: function() {
@@ -803,13 +805,13 @@ var app = {
 				'delay': false,
 				'target':app.planet,
 				'type':'basic',
-				'array':'enemies',
+				'array':app.enemies,
 				'hp':10,
 				'maxhp':10,
 				'damage':2,
 				'defaultStyle':"red",
 				'style':"red",
-				'active':true
+				'alive':true
 			});
 		}
 	},
@@ -931,12 +933,9 @@ var app = {
 			    	++projectile.owner.ammo;
 			    	// Remove health
 			    	app.damageEntity(projectile.target,projectile.owner.damage);
-			    	if(projectile.target.hp <= 0) {
-			    		app.removeEntity(projectile.target, projectile.target.type);
-			    	}
 
 			    	// Remove projectile
-			    	projectile.active = false;
+			    	projectile.alive = false;
 			    } else {
 			    	// Draw projectile
 				    ctx.fillStyle = projectile.style;
@@ -959,7 +958,7 @@ var app = {
 			    	ctx.stroke();
 		    	} else {
 			    	// Remove Projectile
-					projectile.active = false;
+					projectile.alive = false;
 		    		// Remove damage interval
 		    		clearInterval(projectile.owner.damageInterval);
 		    		projectile.owner.damageInterval = 0;
@@ -987,15 +986,8 @@ var app = {
 			    		for(i=0;i<app.enemies.length;i++) {
 			    			if(app.inRange(projectile,app.enemies[i])) {
 			    				app.damageEntity(app.enemies[i],projectile.owner.damage);
-						    	if(app.enemies[i].hp <= 0) {
-							    	app.player.addCash(1);
-							    	app.enemies[i].active = false;
-						    	}
 			    			}
 			    		}
-			    		app.enemies = app.enemies.filter(function(enemy) {
-							return enemy.active;
-						});
 					}
 				} else if(projectile.explode == 1) {
 			    	// Explode, then remove projectile
@@ -1008,7 +1000,7 @@ var app = {
 			    	projectile.style = gradient;
 			    	projectile.size = 20;
 			    	window.setTimeout(function() {
-				    	projectile.active = false;
+				    	projectile.alive = false;
 					}, 200);
 				}
 		    	// Draw projectile
@@ -1020,7 +1012,7 @@ var app = {
 		    }
 		});
 		app.projectiles = app.projectiles.filter(function(projectile) {
-			return projectile.active;
+			return projectile.alive;
 		});
 	},
 	moveTarget: function(unit) {
@@ -1059,9 +1051,9 @@ var app = {
 						'target':unit.target,
 						'size':1.5,
 						'owner':unit,
-						'active':true,
+						'alive':true,
 						'style':'#F1A20D',
-						'array':'projectiles'
+						'array':app.projectiles
 					});
 					--unit.ammo;
 					// Delayed rate of firing
@@ -1083,9 +1075,9 @@ var app = {
 					'target':unit.target,
 					'size':1,
 					'owner':unit,
-					'active':true,
+					'alive':true,
 					'style':'#F1A20D',
-					'array':'projectiles'
+					'array':app.projectiles
 				});
 				current.damageInterval = setInterval(function() {
 					if(unit.target) {
@@ -1096,10 +1088,9 @@ var app = {
 					    	if(unit.target.hp <= 0) {
 					    		clearInterval(current.damageInterval);
 					    		current.damageInterval = 0;
-					    		app.removeEntity(unit.target);
 					    		current.delay = false;
 					    	} else {
-					    		// Enemy 
+					    		// Enemy
 					    	}
 						}
 					}
@@ -1116,9 +1107,9 @@ var app = {
 					'speed':1,
 					'size':20,
 					'owner':unit,
-					'active':true,
+					'alive':true,
 					// 'style':'rgba(69,178,157,0.5)',
-					'array':'projectiles'
+					'array':app.projectiles
 				});
 				current.shockStyle = "rgba(69,178,157,0)";
 				current.damageInterval = setInterval(function() {
@@ -1138,17 +1129,8 @@ var app = {
 		    			if(app.inRange(unit,app.enemies[i])) {
 		    				app.damageEntity(app.enemies[i],unit.damage);
 					    	app.enemies[i].speed = 1;
-					    	if(app.enemies[i].hp <= 0) {
-						    	// app.removeEntity(app.enemies[i]);
-						    	// breaks loop too early
-						    	app.player.addCash(1);
-						    	app.enemies[i].active = false;
-					    	}
 		    			}
 		    		}
-		    		app.enemies = app.enemies.filter(function(enemy) {
-						return enemy.active;
-					});
 		    	}, unit.rate);
 				--unit.ammo;
 			}
@@ -1162,9 +1144,9 @@ var app = {
 						'target':unit.target,
 						'size':3,
 						'owner':unit,
-						'active':true,
+						'alive':true,
 						'style':'#F1A20D',
-						'array':'projectiles',
+						'array':app.projectiles,
 						'explode':0,
 						'range':20
 					});
@@ -1226,13 +1208,19 @@ var app = {
 			app.floats.push({
 				'owner':unit,
 				'str':"-"+dmg,
-				'active':true,
+				'alive':true,
 				'rgb':'254,58,37',
 				'opacity':0,
 				'y':y,
 				'x':x
 			});
 		}
+		// Remove entity
+		if(unit.hp <= 0) {
+    		if(unit.alive) {
+    			app.removeEntity(unit);
+    		}
+    	}
 	},
 	updateFloats: function() {
 		app.floats.forEach(function(float) {
@@ -1244,13 +1232,13 @@ var app = {
 					ctx.fillStyle = "rgba("+float.rgb+","+float.opacity+")";
 					ctx.fillText(float.str, float.x, float.y);
 				} else {
-					float.active = false;
+					float.alive = false;
 				}
 			// }
 		});
 		// Clear floats
 		app.floats = app.floats.filter(function(float) {
-			return float.active;
+			return float.alive;
 		});
 	},
 	particles: {
@@ -1293,7 +1281,7 @@ var app = {
 				alpha: 1,
 				// set how fast the particle fades out
 				decay: app.random( 0.015, 0.03 ),
-				active: true
+				alive: true
 			});
 		},
 		draw: function() {
@@ -1312,7 +1300,7 @@ var app = {
 
 				// remove the particle once the alpha is low enough, based on the passed in index
 				if( item.alpha <= item.decay ) {
-					item.active = false;
+					item.alive = false;
 				}
 				// Draw
 				ctx.beginPath();
@@ -1327,42 +1315,35 @@ var app = {
 				}
 			});
 			app.particles.items = app.particles.items.filter(function(p) {
-				return p.active;
+				return p.alive;
 			});
 		},
 	},
 	removeEntity: function(unit) {
-		if(unit) {
-			// Explode before removing reference
-			app.particles.init(unit);
-			// Remove from proper array
-			var type = null;
-			console.log('removing: '+unit.array);
-			if(unit.array == 'projectiles') {
-				type = app.projectiles;
-			} else if(unit.array == 'towers') {
-				type = app.towers;
-			} else if(unit.array == 'enemies') {
-				type = app.enemies;
+		// Explode before removing reference
+		app.particles.init(unit);
+		// Remove from proper array
+		console.log('Removing: '+unit.array);
+		if(unit.array) {
+			if(unit.type == 'basic') {
+				app.player.addCash(1);
 			}
-			if(type) {
-				for(i=0;i<type.length;i++) {
-					if(unit == type[i]) {
-						if(type == app.enemies) {
-							if(type[i].type == 'basic') {
-								app.player.addCash(1);
-							} 
-						}
-						type.splice(i, 1);
-					}
-				}
-			} else {
-				// Planet
-				console.log(app.planet.hp);
-				app.planet.shine = "rgba(0,0,0,0)";
-				app.planet.style = "rgba(0,0,0,0)";
-			}
+			unit.alive = false;
+		} else {
+			// Planet
+			console.log(app.planet.hp);
+			app.planet.shine = "rgba(0,0,0,0)";
+			app.planet.style = "rgba(0,0,0,0)";
 		}
+		app.towers = app.towers.filter(function(u) {
+			return u.alive;
+		});
+		app.enemies = app.enemies.filter(function(u) {
+			return u.alive;
+		});
+		app.projectiles = app.projectiles.filter(function(u) {
+			return u.alive;
+		});
 	},
 	random: function(min, max) {
 		return Math.random() * (max - min) + min;
