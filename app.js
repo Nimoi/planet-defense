@@ -771,7 +771,9 @@ var app = {
 			'image':image,
 			'level':1,
 			'price':(tower.price*1.3).toFixed(1),
-			'alive':true
+			'alive':true,
+			'bob':0,
+			'bobNum':0
 		});
 	},
 	spawnWave: function() {
@@ -817,22 +819,34 @@ var app = {
 	},
 	updateTowers: function() {
 		app.towers.forEach(function(tower) {
+			// Bob
+			if(tower.bobNum <= -2) {
+				tower.bob = 1;
+			} else if(tower.bobNum >= 2) {
+				tower.bob = 0;
+			}
+			if(tower.bob) {
+				tower.bobNum += 0.05;
+			} else {
+				tower.bobNum -= 0.05;
+			}
+			var y = tower.bobNum + tower.y;
 			// Draw Tower
 			if(tower.target) {
 				ctx.save();
 				var transx = tower.x + 0.5*tower.size;
-				var transy = tower.y + 0.5*tower.size;
+				var transy = y + 0.5*tower.size;
 				ctx.translate(transx, transy);
-				var rotation = Math.atan2(tower.target.y - tower.y, tower.target.x - tower.x);
+				var rotation = Math.atan2(tower.target.y - y, tower.target.x - tower.x);
 				// * (180 / Math.PI) //rads
 				ctx.rotate(rotation);
 				ctx.fillStyle = tower.style;
 				ctx.translate(-transx, -transy);
-				ctx.fillRect(tower.x, tower.y, tower.size, tower.size);
+				ctx.fillRect(tower.x, y, tower.size, tower.size);
 				ctx.restore();
 			} else {
 				ctx.fillStyle = tower.style;
-				ctx.fillRect(tower.x, tower.y, tower.size, tower.size);
+				ctx.fillRect(tower.x, y, tower.size, tower.size);
 			}
 
 			if(tower.type != 'shock') {
@@ -1323,7 +1337,8 @@ var app = {
 		// Explode before removing reference
 		app.particles.init(unit);
 		// Remove from proper array
-		console.log('Removing: '+unit.array);
+		console.log("Removing entity!");
+		console.log('Entity array: '+unit.array.length);
 		if(unit.array) {
 			if(unit.type == 'basic') {
 				app.player.addCash(1);
