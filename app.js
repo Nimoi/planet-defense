@@ -938,7 +938,7 @@ var app = {
 		});
 	},
 	updateProjectiles: function() {
-		app.projectiles.forEach(function(prj) {
+		app.projectiles.forEach(function(prj, i, arr) {
 			if(prj.owner.type == 'basic') {
 		    	// Check collision
 		    	if(prj.target.alive) {
@@ -1013,6 +1013,7 @@ var app = {
 				    	++prj.owner.ammo;
 			    		// Explode
 			    		prj.explode = 1;
+			    		prj.size = prj.range;
 			    		for(i=0;i<app.enemies.length;i++) {
 			    			if(app.inRange(prj,app.enemies[i])) {
 			    				app.damageEntity(app.enemies[i],prj.owner.damage);
@@ -1021,17 +1022,16 @@ var app = {
 					}
 				} else if(prj.explode == 1) {
 			    	// Explode, then remove prj
-			    	prj.explode = 2;
-			    	var innerRadius = 1;
+			    	// prj.explode = 2;
 					var outerRadius = 20;
-					var gradient = ctx.createRadialGradient(prj.x+prj.size/2, prj.y+prj.size/2, innerRadius, prj.x+prj.size/2, prj.y+prj.size/2, outerRadius);
+					var gradient = ctx.createRadialGradient(prj.x, prj.y, prj.rad, prj.x, prj.y, outerRadius);
 					gradient.addColorStop(0, "rgba(239,201,76,0)");
 					gradient.addColorStop(1, "rgba(243,33,10,1)");
 			    	prj.style = gradient;
-			    	prj.size = 20;
-			    	window.setTimeout(function() {
-				    	prj.alive = false;
-					}, 200);
+			    	prj.size -= 2;
+			    	if(prj.size <= 0) {
+			    		prj.alive = false;
+			    	}
 				}
 		    	// Draw prj
 			    ctx.fillStyle = prj.style;
@@ -1185,7 +1185,8 @@ var app = {
 						'style':'#F1A20D',
 						'array':app.projectiles,
 						'explode':0,
-						'range':20
+						'range':20,
+						'rad':2
 					});
 					--unit.ammo;
 					// Delayed rate of firing
