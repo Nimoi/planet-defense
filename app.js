@@ -1,7 +1,6 @@
 /* Planetary Defense
 * - Defend your planets against attackers
 * - Build and upgrade defenses
-* - Expand your planetary empire
 */
 var canvas;
 window.onload = function() {
@@ -441,6 +440,7 @@ var app = {
 		app.planet.hp = 100;
 		app.planet.array = 0;
 		app.planet.alive = true;
+		app.planet.range = (app.planet.size + 40)*2;
 	},
 	drawPlanet: function() {
 		var x = app.planet.x;
@@ -547,19 +547,42 @@ var app = {
 		},
 		checkNewCollide: function() {
 			var noRoom = false;
+			var vision = false;
 			app.towers.forEach(function(tower) {
 				if(app.collideDetect(app.newTower, tower)) {
 					noRoom = true;
 				}
+				if(app.inVision(tower, app.newTower)) {
+					vision = true;
+				}
 			});
-			if(app.collideDetect(app.newTower, app.planet) || noRoom) {
+			if(app.inVision(app.planet, app.newTower)) {
+					vision = true;
+			}
+			if(app.collideDetect(app.newTower, app.planet) || noRoom || !vision) {
 				return true;
 			} else {
 				return false;
 			}
 		},
+		showBuildable: function() {
+			// Planet range
+			ctx.beginPath();
+			ctx.arc(app.planet.x, app.planet.y, app.planet.range/2, 0, Math.PI * 2, true);
+			app.towers.forEach(function(tower) {
+				var x = tower.x +(tower.size/2);
+				var y = tower.y +(tower.size/2);
+				ctx.moveTo(x,y);
+				ctx.arc(x, y, (tower.range/2)+tower.size, 0, Math.PI * 2, true);
+			});
+			ctx.closePath();
+			ctx.fillStyle = "rgba(100,100,100,0.2)";
+			ctx.fill();
+		},
 		updateNewTower: function() {
 			if(app.newTower.y > app.menus.gameplay.towers.height) {
+				// Buildable
+				app.addTower.showBuildable();
 				// Tower range
 				ctx.fillStyle = "rgba(200,200,200,0.2)";
 				if(app.addTower.checkNewCollide()) {
@@ -1212,6 +1235,15 @@ var app = {
 			return true;
 		}
 	},
+	inVision: function(unit1, unit2) {
+		// TODO: Better method of range detection
+		var distance = Math.sqrt(Math.pow(unit1.x - unit2.x, 2) + Math.pow(unit1.y - unit2.y, 2)).toFixed(2);
+		if(distance > (unit1.range/2)) {
+			return false;
+		} else {
+			return true;
+		}
+	},
 	collideDetect: function(unit1, unit2) {
 		// TODO: Better collision detection
 		var distance = Math.sqrt(Math.pow(unit1.x - unit2.x, 2) + Math.pow(unit1.y - unit2.y, 2)).toFixed(2);
@@ -1312,7 +1344,7 @@ var app = {
 				angle: app.random( 0, Math.PI * 2 ),
 				speed: app.random( 1, 10 ),
 				// friction will slow the particle down
-				friction: 0.99,
+				friction: 1.01,
 				// track the past coordinates of each particle to create a trail effect, increase the coordinate count to create more prominent trails
 				coordinates: coordinates,
 				// gravity will be applied and pull the particle down
