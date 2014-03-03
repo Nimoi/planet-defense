@@ -938,89 +938,105 @@ var app = {
 		});
 	},
 	updateProjectiles: function() {
-		app.projectiles.forEach(function(projectile) {
-			if(projectile.owner.type == 'basic') {
-				app.moveTarget(projectile);
+		app.projectiles.forEach(function(prj) {
+			if(prj.owner.type == 'basic') {
 		    	// Check collision
-		    	if(app.collideDetect(projectile, projectile.target)) {
-			    	// Return ammo
-			    	++projectile.owner.ammo;
-			    	// Remove health
-			    	app.damageEntity(projectile.target,projectile.owner.damage);
+		    	if(prj.target.alive) {
+					app.moveTarget(prj);
+			    	if(app.collideDetect(prj, prj.target)) {
+				    	// Return ammo
+				    	++prj.owner.ammo;
+				    	// Remove health
+				    	app.damageEntity(prj.target,prj.owner.damage);
 
-			    	// Remove projectile
-			    	projectile.alive = false;
+				    	// Remove prj
+				    	prj.alive = false;
+				    }
 			    } else {
-			    	// Draw projectile
-				    ctx.fillStyle = projectile.style;
-					ctx.beginPath();
-					ctx.arc(projectile.x, projectile.y, projectile.size, 0, Math.PI * 2, true);
-					ctx.closePath();
-					ctx.fill();
+					// slow down the particle
+					prj.speed *= prj.friction;
+					// apply velocity
+					prj.x += Math.cos( prj.angle ) * prj.speed;
+					prj.y += Math.sin( prj.angle ) * prj.speed + prj.gravity;
+			    	if(prj.y+prj.size > app.height 
+			    		|| prj.y+prj.size < 0 
+			    		|| prj.x+prj.size > app.width 
+			    		|| prj.x+prj.size < 0) {
+				    	// Return ammo
+				    	++prj.owner.ammo;
+			    		// Remove prj
+				    	prj.alive = false;
+			    	}
 			    }
-		    } else if(projectile.owner.type == 'laser') {
-		    	if(projectile.target.hp > 0 && app.inRange(projectile.target, projectile.owner)) {
+		    	// Draw prj
+			    ctx.fillStyle = prj.style;
+				ctx.beginPath();
+				ctx.arc(prj.x, prj.y, prj.size, 0, Math.PI * 2, true);
+				ctx.closePath();
+				ctx.fill();
+		    } else if(prj.owner.type == 'laser') {
+		    	if(prj.target.hp > 0 && app.inRange(prj.target, prj.owner)) {
 			    	ctx.lineWidth = 1;
-					ctx.strokeStyle = projectile.style;
+					ctx.strokeStyle = prj.style;
 					ctx.beginPath();
-					var oX = projectile.owner.x + projectile.owner.size/2;
-					var oY = projectile.owner.y + projectile.owner.size/2;
-					var tX = projectile.target.x + projectile.target.size/2;
-					var tY = projectile.target.y + projectile.target.size/2;
+					var oX = prj.owner.x + prj.owner.size/2;
+					var oY = prj.owner.y + prj.owner.size/2;
+					var tX = prj.target.x + prj.target.size/2;
+					var tY = prj.target.y + prj.target.size/2;
 			    	ctx.moveTo(oX,oY);
 			    	ctx.lineTo(tX,tY);
 			    	ctx.stroke();
 		    	} else {
-			    	// Remove Projectile
-					projectile.alive = false;
+			    	// Remove prj
+					prj.alive = false;
 		    		// Remove damage interval
-		    		clearInterval(projectile.owner.damageInterval);
-		    		projectile.owner.damageInterval = 0;
+		    		clearInterval(prj.owner.damageInterval);
+		    		prj.owner.damageInterval = 0;
 		    		// Refill ammo
-		    		++projectile.owner.ammo;
+		    		++prj.owner.ammo;
 		    	}
-		    } else if(projectile.owner.type == 'shock') {
-		    	var x = projectile.owner.x + (projectile.owner.size/2);
-		    	var y = projectile.owner.y + (projectile.owner.size/2);
-		    	// Draw projectile
-			    ctx.fillStyle = projectile.owner.shockStyle;
+		    } else if(prj.owner.type == 'shock') {
+		    	var x = prj.owner.x + (prj.owner.size/2);
+		    	var y = prj.owner.y + (prj.owner.size/2);
+		    	// Draw prj
+			    ctx.fillStyle = prj.owner.shockStyle;
 				ctx.beginPath();
-				ctx.arc(x, y, projectile.size, 0, Math.PI * 2, true);
+				ctx.arc(x, y, prj.size, 0, Math.PI * 2, true);
 				ctx.closePath();
 				ctx.fill();
-		    } else if(projectile.owner.type == 'rocket') {
-		    	if(projectile.explode == 0) {
-					app.moveTarget(projectile);
+		    } else if(prj.owner.type == 'rocket') {
+		    	if(prj.explode == 0) {
+					app.moveTarget(prj);
 			    	// Check collision
-			    	if(app.collideDetect(projectile, projectile.target)) {
+			    	if(app.collideDetect(prj, prj.target)) {
 				    	// Return ammo
-				    	++projectile.owner.ammo;
+				    	++prj.owner.ammo;
 			    		// Explode
-			    		projectile.explode = 1;
+			    		prj.explode = 1;
 			    		for(i=0;i<app.enemies.length;i++) {
-			    			if(app.inRange(projectile,app.enemies[i])) {
-			    				app.damageEntity(app.enemies[i],projectile.owner.damage);
+			    			if(app.inRange(prj,app.enemies[i])) {
+			    				app.damageEntity(app.enemies[i],prj.owner.damage);
 			    			}
 			    		}
 					}
-				} else if(projectile.explode == 1) {
-			    	// Explode, then remove projectile
-			    	projectile.explode = 2;
+				} else if(prj.explode == 1) {
+			    	// Explode, then remove prj
+			    	prj.explode = 2;
 			    	var innerRadius = 1;
 					var outerRadius = 20;
-					var gradient = ctx.createRadialGradient(projectile.x+projectile.size/2, projectile.y+projectile.size/2, innerRadius, projectile.x+projectile.size/2, projectile.y+projectile.size/2, outerRadius);
+					var gradient = ctx.createRadialGradient(prj.x+prj.size/2, prj.y+prj.size/2, innerRadius, prj.x+prj.size/2, prj.y+prj.size/2, outerRadius);
 					gradient.addColorStop(0, "rgba(239,201,76,0)");
 					gradient.addColorStop(1, "rgba(243,33,10,1)");
-			    	projectile.style = gradient;
-			    	projectile.size = 20;
+			    	prj.style = gradient;
+			    	prj.size = 20;
 			    	window.setTimeout(function() {
-				    	projectile.alive = false;
+				    	prj.alive = false;
 					}, 200);
 				}
-		    	// Draw projectile
-			    ctx.fillStyle = projectile.style;
+		    	// Draw prj
+			    ctx.fillStyle = prj.style;
 				ctx.beginPath();
-				ctx.arc(projectile.x, projectile.y, projectile.size, 0, Math.PI * 2, true);
+				ctx.arc(prj.x, prj.y, prj.size, 0, Math.PI * 2, true);
 				ctx.closePath();
 				ctx.fill();
 		    }
@@ -1058,16 +1074,23 @@ var app = {
 		if(unit.type == 'basic') {
 			if(unit.ammo > 0) {
 				if(!unit.delay) {
+					var angle = Math.atan2(unit.target.y - unit.y, unit.target.x - unit.x);
 					app.projectiles.push({
 						'x':unit.x,
 						'y':unit.y,
-						'speed':4,
 						'target':unit.target,
 						'size':1.5,
 						'owner':unit,
 						'alive':true,
 						'style':'#F1A20D',
-						'array':app.projectiles
+						'array':app.projectiles,
+						// set a random angle in all possible directions, in radians
+						'angle': angle,
+						'speed':4,
+						// friction will slow the particle down
+						friction: 1.01,
+						// gravity will be applied and pull the particle down
+						gravity: 0.1, // This is space!
 					});
 					--unit.ammo;
 					// Delayed rate of firing
