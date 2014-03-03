@@ -573,7 +573,7 @@ var app = {
 				var x = tower.x +(tower.size/2);
 				var y = tower.y +(tower.size/2);
 				ctx.moveTo(x,y);
-				ctx.arc(x, y, (tower.range/2)+tower.size, 0, Math.PI * 2, true);
+				ctx.arc(x, y, 30, 0, Math.PI * 2, true);
 			});
 			ctx.closePath();
 			ctx.fillStyle = "rgba(100,100,100,0.2)";
@@ -1237,8 +1237,14 @@ var app = {
 	},
 	inVision: function(unit1, unit2) {
 		// TODO: Better method of range detection
+		var maxDist;
+		if(unit1 == app.planet) {
+			maxDist = app.planet.range/2;
+		} else {
+			maxDist = 30;
+		}
 		var distance = Math.sqrt(Math.pow(unit1.x - unit2.x, 2) + Math.pow(unit1.y - unit2.y, 2)).toFixed(2);
-		if(distance > (unit1.range/2)) {
+		if(distance > maxDist) {
 			return false;
 		} else {
 			return true;
