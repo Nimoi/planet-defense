@@ -148,6 +148,9 @@ var app = {
 			},
 			timer: {
 				startTime: Date.now(),
+				elapsed: function() {
+					return Date.now() - app.menus.gameplay.timer.startTime - app.menus.pause.elapsedTime;
+				},
 				elapsedTime: function() {
 					var time = Date.now() - app.menus.gameplay.timer.startTime - app.menus.pause.elapsedTime;
 					var s = time/1000;
@@ -319,7 +322,7 @@ var app = {
 				}
 				// Spawn enemies
 				if(!app.menus.gameOver.active) {
-					app.spawnWave();
+					app.wave.check();
 				}
 				// Display tooltip
 				if(app.tooltip.active) {
@@ -799,26 +802,104 @@ var app = {
 			'bobNum':0
 		});
 	},
-	spawnWave: function() {
-		if(Math.random() < app.spawnRate) {
-			app.spawnEnemies(app.numEnemies);
-			if(Math.random() < 0.5) {
-				app.spawnRate += 0.001;
-				ntils.colorLog("Spawn rate: "+app.spawnRate, "orangered");
+	wave: {
+		active: true,
+		current: 0,
+		level: 1,
+		types: [{
+			type:'basic',
+			'basic':5
+		}, {
+			type:'medium',
+			'basic':5,
+			'medium':2
+		}, {
+			type:'large',
+			'basic':5,
+			'medium':2,
+			'large':1
+		}],
+		waves: [[0,1],[0,1],[0,1],[0,1],[0,1],[1,1],[0,1],[2,1],[1,2],[0,2],[0,3]],
+		check: function() {
+			var e = app.menus.gameplay.timer.elapsed();
+			var time = (e/1000).toFixed(0);
+			// console.log(time%12);
+			if(time%10 == 9) {
+				if(app.wave.active) {
+					app.wave.spawn();
+					cooldown();
+				}
+			}
+			// At least 5s between spawns
+			function cooldown() {
+				app.wave.active = false;
+				window.setTimeout(function() {
+				    app.wave.active = true;
+				}, 5000);
+			}
+		},
+		spawn: function() {
+			w = app.wave;
+			// Current wave
+			wi = w.waves[w.current];
+			// Wave type
+			wt = w.types[wi[0]];
+			// Num waves
+			nw = wi[1];
+			for(i=0;i<nw;i++) {
+				if(wt.basic) {
+					app.spawnEnemies(wt.basic,'basic');
+				}
+				if(wt.medium) {
+					app.spawnEnemies(wt.medium,'medium');
+				}
+				if(wt.large) {
+					app.spawnEnemies(wt.large,'large');
+				}
+			}
+			w.current++;
+			if(w.current >= w.waves.length) {
+				w.current = 0;
+				w.level++;
+				// TODO
+				// Increase wave stats based on wave level
 			}
 		}
 	},
 	// Generate enemies
-	spawnEnemies: function(num) {
+	spawnEnemies: function(num, type) {
+		// Defaults
+		var size = 10;
+		var range = 40;
+		var speed = 2;
+		var ammo = 2;
+		var rate = 500;
+		var damage = 2;
+		var maxhp = 10;
+		var value = 1;
+		if(type == 'basic') {
+			//
+		}
+		if(type == 'medium') {
+			size = 14;
+			range = 60;
+			ammo = 3;
+			damage = 4;
+			maxhp = 25;
+			value = 5;
+		}
+		if(type == 'large') {
+			size = 20;
+			range = 80;
+			ammo = 4;
+			damage = 5;
+			maxhp = 50;
+			value = 10;
+		}
 		for(i=0; i < num; i++) {
-			var size = 10;
 			var x = app.width+(Math.random()*60)-10;
 			// var y = (app.height/2)+(Math.random()*60)-10;
 			var y = ~~((Math.random()*(app.height-40))+40);
-			var range = 40;
-			var speed = 2;
-			var ammo = 2;
-			var rate = 500; // rate between shots
 			app.enemies.push({
 				'x':x,
 				'y':y,
@@ -831,12 +912,13 @@ var app = {
 				'target':app.planet,
 				'type':'basic',
 				'array':app.enemies,
-				'hp':10,
-				'maxhp':10,
-				'damage':2,
+				'hp':maxhp,
+				'maxhp':maxhp,
+				'damage':damage,
 				'defaultStyle':"red",
 				'style':"red",
-				'alive':true
+				'alive':true,
+				'value':value
 			});
 		}
 	},
@@ -1406,9 +1488,7 @@ var app = {
 		console.log("Removing entity!");
 		console.log('Entity array: '+unit.array.length);
 		if(unit.array) {
-			if(unit.type == 'basic') {
-				app.player.addCash(1);
-			}
+			app.player.addCash(unit.value);
 			unit.alive = false;
 		} else {
 			// Planet
