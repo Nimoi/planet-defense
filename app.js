@@ -882,7 +882,7 @@ var app = {
 		}
 		if(type == 'medium') {
 			size = 14;
-			range = 60;
+			range = 45;
 			ammo = 3;
 			damage = 4;
 			maxhp = 25;
@@ -890,7 +890,7 @@ var app = {
 		}
 		if(type == 'large') {
 			size = 20;
-			range = 80;
+			range = 50;
 			ammo = 4;
 			damage = 5;
 			maxhp = 50;
