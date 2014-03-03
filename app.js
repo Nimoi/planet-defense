@@ -998,6 +998,10 @@ var app = {
 		    } else if(prj.owner.type == 'shock') {
 		    	var x = prj.owner.x + (prj.owner.size/2);
 		    	var y = prj.owner.y + (prj.owner.size/2);
+		    	prj.size -= 2;
+		    	if(prj.size <= 0) {
+		    		prj.size = 20;
+		    	}
 		    	// Draw prj
 			    ctx.fillStyle = prj.owner.shockStyle;
 				ctx.beginPath();
