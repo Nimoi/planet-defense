@@ -38,6 +38,8 @@ var app = {
 		app.spawnEnemies();
 		// Start main loop
 		setInterval(app.gameLoop, 1000/app.FPS);
+		app.smw = new Image();
+		app.smw.src = 'smw2.png';
 	},
 	menus: {
 		gameplay: {
@@ -639,6 +641,8 @@ var app = {
 		draw: function() {
 			if(app.tooltip.target) {
 				var unit = app.tooltip.target;
+				var bottom = app.menus.gameplay.bottom;
+				var ticker = app.menus.gameplay.ticker;
 				// Show range
 				ctx.fillStyle = "rgba(100,100,100,0.2)";
 				var x = unit.x +(unit.size/2);
@@ -647,26 +651,27 @@ var app = {
 				ctx.arc(x, y, unit.range, 0, Math.PI * 2, true);
 				ctx.closePath();
 				ctx.fill();
+				// UPGRADE/SELL
 				// Panel BG
+				var w = 160;
+				var h = 40;
 				x = 0;
-				y = 260;
-				var w = 220;
-				var h = 100;
+				y = app.height - bottom.height - ticker.height - h - 10;
 				ctx.strokeStyle = "rgba(255,255,255,0.4)";
 				ctx.lineWidth = 0.5;
 				ctx.strokeRect(x, y, w, h);
 				ctx.fillStyle = "rgba(0,0,0,0.4)";
 				ctx.fillRect(x, y, w, h);
-				// bottom
-				var bottom = app.menus.gameplay.bottom;
+				// TODO: Upgrade/Sell buttons
+				// Bottom
 				y = app.height - bottom.height;
 				// Stats
 				ctx.font = "14px Helvetica";
 				ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-				var str = "Level "+unit.level;
+				var str = unit.type+" "+unit.level;
 				x += 10;
 				y += 20;
-				ctx.fillText(str, x, y);
+				ctx.fillText(str.toUpperCase(), x, y);
 				ctx.font = "11px Helvetica";
 				// Damage
 				y += 20;
@@ -688,7 +693,7 @@ var app = {
 					x = 120;
 					y = app.height - bottom.height + 20;
 					str = "Level "+upgrades.level;
-					ctx.fillText(str, x, y);
+					ctx.fillText(str.toUpperCase(), x, y);
 					ctx.font = "11px Helvetica";
 					// Damage
 					y += 20;
@@ -978,10 +983,12 @@ var app = {
 				ctx.fillStyle = tower.style;
 				ctx.translate(-transx, -transy);
 				ctx.fillRect(tower.x, y, tower.size, tower.size);
+				ctx.drawImage(app.smw,9,244,18,18,tower.x,y,20,20);
 				ctx.restore();
 			} else {
 				ctx.fillStyle = tower.style;
 				ctx.fillRect(tower.x, y, tower.size, tower.size);
+				ctx.drawImage(app.smw,9,164,18,18,tower.x,y,20,20);
 			}
 
 			if(tower.type != 'shock') {
@@ -1036,7 +1043,8 @@ var app = {
 			ctx.rotate(rotation);
 			ctx.fillStyle = enemy.style;
 			ctx.translate(-transx, -transy);
-			ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+			// ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+			ctx.drawImage(app.smw,177,1124,20,20,enemy.x,enemy.y,20,20);
 			ctx.restore();
 			// Targetting
 			if(enemy.target == app.planet) {
