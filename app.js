@@ -16,7 +16,7 @@ window.onload = function() {
 }
 var app = {
 	width: 640,
-	height: 360,
+	height: 480,
 	stars: [],
 	planet: {},
 	towers: [],
@@ -194,6 +194,30 @@ var app = {
 					ctx.fillRect(x, y, app.planet.hp, h);
 				},
 			},
+			ticker: {
+				height: 20,
+				draw: function() {
+					var context = app.menus.gameplay.ticker;
+					// Menu background
+					ctx.fillStyle = "rgba(25, 25, 25, 0.75)";
+					var y = app.height-app.menus.gameplay.bottom.height-context.height;
+					ctx.fillRect(0, y, app.width, context.height);
+					// Menu border
+					ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+					y -= 1;
+					ctx.fillRect(0, y, app.width, 1);
+				},
+			},
+			bottom: {
+				height: 90,
+				draw: function() {
+					var context = app.menus.gameplay.bottom;
+					// Menu background
+					ctx.fillStyle = "rgba(25, 25, 25, 0.5)";
+					var y = app.height-context.height;
+					ctx.fillRect(0, y, app.width, context.height);
+				},
+			},
 		},
 		pause: {
 			active: false,
@@ -324,10 +348,6 @@ var app = {
 				if(!app.menus.gameOver.active) {
 					app.wave.check();
 				}
-				// Display tooltip
-				if(app.tooltip.active) {
-					app.tooltip.draw(); 
-				}
 				// Game Over
 				if(app.menus.gameOver.active) {
 					app.menus.gameOver.end();
@@ -337,6 +357,13 @@ var app = {
 					app.menus.gameplay.timer.draw();
 					app.menus.gameplay.health.draw();
 					app.menus.pause.button.draw();
+					// Bottom
+					app.menus.gameplay.ticker.draw();
+					app.menus.gameplay.bottom.draw();
+					// Display tooltip
+					if(app.tooltip.active) {
+						app.tooltip.draw(); 
+					}
 				}
 			}
 			if(app.planet.hp <= 0) {
@@ -438,7 +465,7 @@ var app = {
 		app.planet.defaultStyle = randColor;
 		app.planet.style = randColor;
 		app.planet.x = app.width/2;
-		app.planet.y = app.height/2;
+		app.planet.y = ((app.height - app.menus.gameplay.ticker.height - app.menus.gameplay.bottom.height)/2);
 		app.planet.size = 100;
 		app.planet.hp = 100;
 		app.planet.array = 0;
@@ -630,6 +657,9 @@ var app = {
 				ctx.strokeRect(x, y, w, h);
 				ctx.fillStyle = "rgba(0,0,0,0.4)";
 				ctx.fillRect(x, y, w, h);
+				// bottom
+				var bottom = app.menus.gameplay.bottom;
+				y = app.height - bottom.height;
 				// Stats
 				ctx.font = "14px Helvetica";
 				ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
@@ -656,7 +686,7 @@ var app = {
 					ctx.font = "14px Helvetica";
 					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
 					x = 120;
-					y = 280;
+					y = app.height - bottom.height + 20;
 					str = "Level "+upgrades.level;
 					ctx.fillText(str, x, y);
 					ctx.font = "11px Helvetica";
