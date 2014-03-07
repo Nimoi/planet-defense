@@ -23,8 +23,6 @@ var app = {
 	enemies: [],
 	projectiles: [],
 	newTower: {},
-	spawnRate: 0.01,
-	numEnemies: 1,
 	FPS:30,
 	mode:'normal', // Hard mode enables enemies to attack towers
 	initialize: function() {
@@ -40,6 +38,109 @@ var app = {
 		setInterval(app.gameLoop, 1000/app.FPS);
 		app.smw = new Image();
 		app.smw.src = 'smw2.png';
+	},
+	// Environmnet
+	clearCanvas: function() {
+		ctx.clearRect(0,0,app.width,app.height);
+	},
+	initStars: function() {
+        for (i=0; i<=140; i++) {
+          // Get random positions for stars
+          var starx = ~~(Math.random() * (app.width*2));
+          var stary = ~~(Math.random() * app.height);
+
+          // Make the stars white
+          starFill = "rgba(255, 255, 255, "+Math.random()+")";
+
+          // Get random size for stars
+          starSize = ~~(Math.random() * 3);
+          app.stars.push([starFill, starx, stary, starSize]);
+        }
+	},
+	drawStars: function() {
+		for (i=0; i < app.stars.length; i++) {
+			if(app.planet.hp > 0) {
+				app.stars[i][1] += 0.19;
+				if(app.stars[i][1] > (app.width*2)) {
+					app.stars[i][1] = -app.stars[i][3];
+				}
+			}
+			var x = app.stars[i][1];
+			var y = app.stars[i][2];
+			// Draw the given star
+			ctx.fillStyle = app.stars[i][0];
+			ctx.beginPath();
+			ctx.arc(x, y, app.stars[i][3], 0, Math.PI * 2, true);
+			ctx.closePath();
+			ctx.fill();
+		}
+	},
+	sun: {
+		pos: {
+			x:-200,
+			y:50
+		},
+		draw: function() {
+			// Sun
+			var size = 20;
+			var glow = 200;
+			if(app.planet.hp > 0) {
+				app.sun.pos.x += 0.2;
+				app.sun.pos.y += 0.02;
+				if(app.sun.pos.x > (app.width*2)) {
+					app.sun.pos.x = -glow;
+					app.sun.pos.y = 50;
+				}
+			}
+			var x = app.sun.pos.x;
+			var y = app.sun.pos.y;
+			ctx.fillStyle = "#EEF66C";
+			ctx.beginPath();
+			ctx.arc(x, y, size, 0, Math.PI * 2, true);
+			ctx.closePath();
+			ctx.fill();
+			// Glow
+			var innerRadius = 1;
+			var outerRadius = glow;
+			var gradient = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
+			gradient.addColorStop(0, "rgba(253,184,19,0.15)");
+			gradient.addColorStop(1, "rgba(255,255,255,0)");
+	    	ctx.fillStyle = gradient;
+	    	ctx.beginPath();
+			ctx.arc(x, y, glow, 0, Math.PI * 2, true);
+			ctx.closePath();
+			ctx.fill();
+		},
+	},
+	initPlanet: function() {
+		function getColor() {
+			return app.randColor();
+		}
+		var randColor = getColor();
+		app.planet.shine = "rgba(255, 255, 255, 1)";
+		app.planet.defaultStyle = randColor;
+		app.planet.style = randColor;
+		app.planet.x = app.width/2;
+		app.planet.y = ((app.height - app.menus.gameplay.ticker.height - app.menus.gameplay.bottom.height)/2);
+		app.planet.size = 100;
+		app.planet.hp = 100;
+		app.planet.array = 0;
+		app.planet.alive = true;
+		app.planet.range = (app.planet.size + 40)*2;
+	},
+	drawPlanet: function() {
+		var x = app.planet.x;
+		var y = app.planet.y;
+		var innerRadius = 1;
+		var outerRadius = app.planet.size;
+		var gradient = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
+		gradient.addColorStop(0, app.planet.shine);
+		gradient.addColorStop(1, app.planet.style);
+		ctx.fillStyle = gradient;
+		ctx.beginPath();
+		ctx.arc(x, y, outerRadius, 0, Math.PI * 2, true);
+		ctx.closePath();
+		ctx.fill();
 	},
 	menus: {
 		gameplay: {
@@ -385,108 +486,6 @@ var app = {
 		} else if(app.state.current == 'gameover') {
 			app.state.gameplay();
 		}
-	},
-	clearCanvas: function() {
-		ctx.clearRect(0,0,app.width,app.height);
-	},
-	initStars: function() {
-        for (i=0; i<=140; i++) {
-          // Get random positions for stars
-          var starx = ~~(Math.random() * (app.width*2));
-          var stary = ~~(Math.random() * app.height);
-
-          // Make the stars white
-          starFill = "rgba(255, 255, 255, "+Math.random()+")";
-
-          // Get random size for stars
-          starSize = ~~(Math.random() * 3);
-          app.stars.push([starFill, starx, stary, starSize]);
-        }
-	},
-	drawStars: function() {
-		for (i=0; i < app.stars.length; i++) {
-			if(app.planet.hp > 0) {
-				app.stars[i][1] += 0.19;
-				if(app.stars[i][1] > (app.width*2)) {
-					app.stars[i][1] = -app.stars[i][3];
-				}
-			}
-			var x = app.stars[i][1];
-			var y = app.stars[i][2];
-			// Draw the given star
-			ctx.fillStyle = app.stars[i][0];
-			ctx.beginPath();
-			ctx.arc(x, y, app.stars[i][3], 0, Math.PI * 2, true);
-			ctx.closePath();
-			ctx.fill();
-		}
-	},
-	sun: {
-		pos: {
-			x:-200,
-			y:50
-		},
-		draw: function() {
-			// Sun
-			var size = 20;
-			var glow = 200;
-			if(app.planet.hp > 0) {
-				app.sun.pos.x += 0.2;
-				app.sun.pos.y += 0.02;
-				if(app.sun.pos.x > (app.width*2)) {
-					app.sun.pos.x = -glow;
-					app.sun.pos.y = 50;
-				}
-			}
-			var x = app.sun.pos.x;
-			var y = app.sun.pos.y;
-			ctx.fillStyle = "#EEF66C";
-			ctx.beginPath();
-			ctx.arc(x, y, size, 0, Math.PI * 2, true);
-			ctx.closePath();
-			ctx.fill();
-			// Glow
-			var innerRadius = 1;
-			var outerRadius = glow;
-			var gradient = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
-			gradient.addColorStop(0, "rgba(253,184,19,0.15)");
-			gradient.addColorStop(1, "rgba(255,255,255,0)");
-	    	ctx.fillStyle = gradient;
-	    	ctx.beginPath();
-			ctx.arc(x, y, glow, 0, Math.PI * 2, true);
-			ctx.closePath();
-			ctx.fill();
-		},
-	},
-	initPlanet: function() {
-		function getColor() {
-			return app.randColor();
-		}
-		var randColor = getColor();
-		app.planet.shine = "rgba(255, 255, 255, 1)";
-		app.planet.defaultStyle = randColor;
-		app.planet.style = randColor;
-		app.planet.x = app.width/2;
-		app.planet.y = ((app.height - app.menus.gameplay.ticker.height - app.menus.gameplay.bottom.height)/2);
-		app.planet.size = 100;
-		app.planet.hp = 100;
-		app.planet.array = 0;
-		app.planet.alive = true;
-		app.planet.range = (app.planet.size + 40)*2;
-	},
-	drawPlanet: function() {
-		var x = app.planet.x;
-		var y = app.planet.y;
-		var innerRadius = 1;
-		var outerRadius = app.planet.size;
-		var gradient = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
-		gradient.addColorStop(0, app.planet.shine);
-		gradient.addColorStop(1, app.planet.style);
-		ctx.fillStyle = gradient;
-		ctx.beginPath();
-		ctx.arc(x, y, outerRadius, 0, Math.PI * 2, true);
-		ctx.closePath();
-		ctx.fill();
 	},
 	// Controls
 	getMousePos: function(canvas, evt) {
@@ -839,33 +838,61 @@ var app = {
 	},
 	wave: {
 		active: true,
-		current: 0,
+		waveNum: 0,
+		qNum: 0,
+		qi: 0,
+		toSpawn: 0,
+		start: 0,
+		elapsed: 0,
+		ready: true,
 		level: 1,
 		types: [{
-			type:'basic',
-			'basic':5,
-			'delay':0,
+			'type':'basic',
+			'num':5,
+			'delay':1,
 			'interval':1
 		}, {
-			type:'medium',
-			'medium':2,
+			'type':'medium',
+			'num':2,
 			'delay':2,
 			'interval':3
 		}, {
-			type:'large',
-			'large':1,
+			'type':'large',
+			'num':1,
 			'delay':5,
 			'interval':5
 		}],
-		waves: [[0,1],[0,1],[0,1],[0,1],[0,1],[1,1],[0,1],[2,1],[1,2],[0,2],[0,3]],
+		// waves: [[0,1],[0,1],[0,1],[0,1],[0,1],[1,1],[0,1],[2,1],[1,2],[0,2],[0,3]],
+		waves: [
+			[[0,1],[0,1]],
+		],
+		queue: [],
 		check: function() {
+			w = app.wave;
 			var e = app.menus.gameplay.timer.elapsed();
 			var time = (e/1000).toFixed(0);
 			// console.log(time%12);
-			if(time%10 == 9) {
-				if(app.wave.active) {
-					app.wave.spawn();
-					cooldown();
+			if(app.wave.queue.length == 0) {
+				if(time%10 == 9) {
+					if(app.wave.active) {
+						w.start = e;
+						w.queue.push(w.waves[w.waveNum]);
+						w.ready = true;
+						w.spawn(w.qNum);
+						cooldown();
+					}
+				}
+			} else {
+				// Spawn next queue
+				if(w.ready) {
+					w.spawn(w.qNum);
+					w.ready = false;
+				}
+			}
+			if(w.start) {
+				w.elapsed = Date.now() - w.start - app.menus.pause.elapsedTime;
+				if(w.elapsed > w.types[w.queue[w.qNum][w.qi][0]].delay) {
+					w.ready = true;
 				}
 			}
 			// At least 5s between spawns
@@ -876,28 +903,39 @@ var app = {
 				}, 5000);
 			}
 		},
-		spawn: function() {
+		spawn: function(wave) {
 			w = app.wave;
-			// Current wave
-			wi = w.waves[w.current];
-			// Wave type
-			wt = w.types[wi[0]];
-			// Num waves
-			nw = wi[1];
-			for(i=0;i<nw;i++) {
-				if(wt.basic) {
-					app.spawnEnemies(wt.basic,'basic');
-				}
-				if(wt.medium) {
-					app.spawnEnemies(wt.medium,'medium');
-				}
-				if(wt.large) {
-					app.spawnEnemies(wt.large,'large');
-				}
+			// Type
+			typeNum = w.queue[w.qNum][w.qi][0];
+			wt = w.types[typeNum];
+			app.spawnEnemies(wt.num,wt.type);
+			// for(i=0;i<nw;i++) {
+			// 	if(wt.basic) {
+			// 		app.spawnEnemies(wt.basic,'basic');
+			// 	}
+			// 	if(wt.medium) {
+			// 		app.spawnEnemies(wt.medium,'medium');
+			// 	}
+			// 	if(wt.large) {
+			// 		app.spawnEnemies(wt.large,'large');
+			// 	}
+			// }
+			w.qi++;
+			if(w.qi >= w.queue[w.qNum].length) {
+				// Reset queue item
+				w.qi = 0;
+				w.qNum++;
 			}
-			w.current++;
-			if(w.current >= w.waves.length) {
-				w.current = 0;
+			if(w.qNum >= w.queue.length) {
+				// Reset queue
+				w.qNum = 0;
+				w.queue = [];
+				w.waveNum++;
+				w.start = 0;
+			}
+			if(w.waveNum >= w.waves.length) {
+				// Reset waves
+				w.waveNum = 0;
 				w.level++;
 				// TODO
 				// Increase wave stats based on wave level
@@ -1308,6 +1346,7 @@ var app = {
 					    current.shockStyle = "rgba(69,178,157,0)";
 					}, 200);
 		    		// Damage nearby enemies
+		    		// TODO: Fix shock towers may be attempting to slow enemies that aren't alive
 		    		for(i=0;i<app.enemies.length;i++) {
 		    			if(app.inRange(unit,app.enemies[i])) {
 		    				app.damageEntity(app.enemies[i],unit.damage);
