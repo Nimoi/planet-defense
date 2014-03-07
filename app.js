@@ -846,7 +846,7 @@ var app = {
 		elapsed: 0,
 		qStart: 0,
 		qElapsed: 0,
-		ready: true,
+		ready: false,
 		level: 1,
 		types: [{
 			'type':'basic',
@@ -874,24 +874,29 @@ var app = {
 			var time = (e/1000).toFixed(0);
 			// console.log(time%12);
 			if(app.wave.queue.length == 0) {
-				if(time%10 == 9) {
-					if(app.wave.active) {
+				if(time%10 == 1) {
+					// if(app.wave.active) {
 						w.start = Date.now();
 						w.queue.push(w.waves[w.waveNum]);
-						w.ready = false;
-						w.spawn();
-						cooldown();
-					}
+						// cooldown();
+					// }
 				}
-			} else {
-				// Spawn next queue
+			}
+			if(app.wave.queue.length > 0) {
+				// Spawn next queue wave
 				if(w.ready) {
-					w.spawn();
+					w.qElapsed = Date.now() - w.qStart - app.menus.pause.elapsedTime;
+					console.log("qiDelay: "+w.types[w.queue[w.qNum][w.qi][0]].delay);
+					console.log("qElapsed: "+(w.qElapsed/1000).toFixed(0));
+					if((w.qElapsed/1000).toFixed(0) == w.types[w.queue[w.qNum][w.qi][0]].delay) {
+						w.spawn();
+						w.qStart = Date.now();
+					}
 				} else {
 					// Updated elapsed time
 					w.elapsed = Date.now() - w.start - app.menus.pause.elapsedTime;
 					console.log((w.elapsed/1000).toFixed(0));
-					// if(w.elapsed > w.types[w.queue[w.qNum][w.qi][0]].delay) {
+					console.log((w.queue[w.qNum][w.qi][2]));
 					if((w.elapsed/1000).toFixed(0) > w.queue[w.qNum][w.qi][2]) {
 						// Spawn next queued item
 						w.ready = true;
@@ -899,20 +904,17 @@ var app = {
 					}
 				}
 			}
-			// At least 5s between spawn waves
-			function cooldown() {
-				app.wave.active = false;
-				window.setTimeout(function() {
-				    app.wave.active = true;
-				}, 5000);
-			}
+			// // At least 5s between spawn waves
+			// function cooldown() {
+			// 	app.wave.active = false;
+			// 	window.setTimeout(function() {
+			// 	    app.wave.active = true;
+			// 	}, 5000);
+			// }
 		},
 		spawn: function() {
 			console.log("SPAWNING!");
 			w = app.wave;
-			// Time
-			w.qElapsed = Date.now() - w.start - app.menus.pause.elapsedTime;
-			console.log((w.qElapsed/1000).toFixed(0));
 			// Type
 			typeNum = w.queue[w.qNum][w.qi][0];
 			wt = w.types[typeNum];
@@ -920,7 +922,8 @@ var app = {
 			--w.queue[w.qNum][w.qi][1];
 			if(w.queue[w.qNum][w.qi][1] <= 0) {
 				w.qi++;
-				w.ready = false;
+				// w.ready = false;
+				w.qStart = 0;
 			}
 			if(w.qi >= w.queue[w.qNum].length) {
 				// Reset queue item
