@@ -143,8 +143,8 @@ var app = {
 		var gradient = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
 		gradient.addColorStop(0, app.planet.shine);
 		gradient.addColorStop(1, app.planet.style);
-		ctx.shadowBlur = 20;
-		ctx.shadowColor = app.planet.defaultStyle;
+		ctx.shadowBlur = 10;
+		ctx.shadowColor = app.planet.style;
 		ctx.fillStyle = gradient;
 		ctx.beginPath();
 		ctx.arc(x, y, outerRadius, 0, Math.PI * 2, true);
