@@ -844,27 +844,28 @@ var app = {
 		toSpawn: 0,
 		start: 0,
 		elapsed: 0,
+		qStart: 0,
+		qElapsed: 0,
 		ready: true,
 		level: 1,
 		types: [{
 			'type':'basic',
 			'num':5,
 			'delay':1,
-			'interval':1
 		}, {
 			'type':'medium',
 			'num':2,
 			'delay':2,
-			'interval':3
 		}, {
 			'type':'large',
 			'num':1,
 			'delay':5,
-			'interval':5
 		}],
 		// waves: [[0,1],[0,1],[0,1],[0,1],[0,1],[1,1],[0,1],[2,1],[1,2],[0,2],[0,3]],
+		// [type, num, delay]
 		waves: [
-			[[0,1],[0,1]],
+			[[0,1,0],[0,1,5]],
+			[[0,1,0],[0,1,5]],
 		],
 		queue: [],
 		check: function() {
@@ -875,27 +876,30 @@ var app = {
 			if(app.wave.queue.length == 0) {
 				if(time%10 == 9) {
 					if(app.wave.active) {
-						w.start = e;
+						w.start = Date.now();
 						w.queue.push(w.waves[w.waveNum]);
-						w.ready = true;
-						w.spawn(w.qNum);
+						w.ready = false;
+						w.spawn();
 						cooldown();
 					}
 				}
 			} else {
 				// Spawn next queue
 				if(w.ready) {
-					w.spawn(w.qNum);
-					w.ready = false;
+					w.spawn();
+				} else {
+					// Updated elapsed time
+					w.elapsed = Date.now() - w.start - app.menus.pause.elapsedTime;
+					console.log((w.elapsed/1000).toFixed(0));
+					// if(w.elapsed > w.types[w.queue[w.qNum][w.qi][0]].delay) {
+					if((w.elapsed/1000).toFixed(0) > w.queue[w.qNum][w.qi][2]) {
+						// Spawn next queued item
+						w.ready = true;
+						w.qStart = Date.now();
+					}
 				}
 			}
-			if(w.start) {
-				w.elapsed = Date.now() - w.start - app.menus.pause.elapsedTime;
-				if(w.elapsed > w.types[w.queue[w.qNum][w.qi][0]].delay) {
-					w.ready = true;
-				}
-			}
-			// At least 5s between spawns
+			// At least 5s between spawn waves
 			function cooldown() {
 				app.wave.active = false;
 				window.setTimeout(function() {
@@ -903,24 +907,21 @@ var app = {
 				}, 5000);
 			}
 		},
-		spawn: function(wave) {
+		spawn: function() {
+			console.log("SPAWNING!");
 			w = app.wave;
+			// Time
+			w.qElapsed = Date.now() - w.start - app.menus.pause.elapsedTime;
+			console.log((w.qElapsed/1000).toFixed(0));
 			// Type
 			typeNum = w.queue[w.qNum][w.qi][0];
 			wt = w.types[typeNum];
-			app.spawnEnemies(wt.num,wt.type);
-			// for(i=0;i<nw;i++) {
-			// 	if(wt.basic) {
-			// 		app.spawnEnemies(wt.basic,'basic');
-			// 	}
-			// 	if(wt.medium) {
-			// 		app.spawnEnemies(wt.medium,'medium');
-			// 	}
-			// 	if(wt.large) {
-			// 		app.spawnEnemies(wt.large,'large');
-			// 	}
-			// }
-			w.qi++;
+			app.spawnEnemies(1,wt.type);
+			--w.queue[w.qNum][w.qi][1];
+			if(w.queue[w.qNum][w.qi][1] <= 0) {
+				w.qi++;
+				w.ready = false;
+			}
 			if(w.qi >= w.queue[w.qNum].length) {
 				// Reset queue item
 				w.qi = 0;
@@ -970,10 +971,10 @@ var app = {
 			maxhp = 50;
 			value = 10;
 		}
+		var x = app.width+(Math.random()*60)-10;
+		// var y = (app.height/2)+(Math.random()*60)-10;
+		var y = ~~((Math.random()*(app.height-40))+40);
 		for(i=0; i < num; i++) {
-			var x = app.width+(Math.random()*60)-10;
-			// var y = (app.height/2)+(Math.random()*60)-10;
-			var y = ~~((Math.random()*(app.height-40))+40);
 			app.enemies.push({
 				'x':x,
 				'y':y,
