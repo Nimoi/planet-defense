@@ -843,16 +843,19 @@ var app = {
 		level: 1,
 		types: [{
 			type:'basic',
-			'basic':5
+			'basic':5,
+			'delay':0,
+			'interval':1
 		}, {
 			type:'medium',
-			'basic':5,
-			'medium':2
+			'medium':2,
+			'delay':2,
+			'interval':3
 		}, {
 			type:'large',
-			'basic':5,
-			'medium':2,
-			'large':1
+			'large':1,
+			'delay':5,
+			'interval':5
 		}],
 		waves: [[0,1],[0,1],[0,1],[0,1],[0,1],[1,1],[0,1],[2,1],[1,2],[0,2],[0,3]],
 		check: function() {
@@ -905,7 +908,7 @@ var app = {
 	spawnEnemies: function(num, type) {
 		// Defaults
 		var size = 10;
-		var range = 40;
+		var range = 20;
 		var speed = 2;
 		var ammo = 2;
 		var rate = 500;
@@ -917,7 +920,6 @@ var app = {
 		}
 		if(type == 'medium') {
 			size = 14;
-			range = 45;
 			ammo = 3;
 			damage = 4;
 			maxhp = 25;
@@ -925,7 +927,6 @@ var app = {
 		}
 		if(type == 'large') {
 			size = 20;
-			range = 50;
 			ammo = 4;
 			damage = 5;
 			maxhp = 50;
@@ -983,12 +984,12 @@ var app = {
 				ctx.fillStyle = tower.style;
 				ctx.translate(-transx, -transy);
 				ctx.fillRect(tower.x, y, tower.size, tower.size);
-				ctx.drawImage(app.smw,9,244,18,18,tower.x,y,20,20);
+				// ctx.drawImage(app.smw,9,244,18,18,tower.x,y,20,20);
 				ctx.restore();
 			} else {
 				ctx.fillStyle = tower.style;
 				ctx.fillRect(tower.x, y, tower.size, tower.size);
-				ctx.drawImage(app.smw,9,164,18,18,tower.x,y,20,20);
+				// ctx.drawImage(app.smw,9,164,18,18,tower.x,y,20,20);
 			}
 
 			if(tower.type != 'shock') {
@@ -1043,8 +1044,8 @@ var app = {
 			ctx.rotate(rotation);
 			ctx.fillStyle = enemy.style;
 			ctx.translate(-transx, -transy);
-			// ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
-			ctx.drawImage(app.smw,177,1124,20,20,enemy.x,enemy.y,20,20);
+			ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+			// ctx.drawImage(app.smw,177,1124,20,20,enemy.x,enemy.y,20,20);
 			ctx.restore();
 			// Targetting
 			if(enemy.target == app.planet) {
@@ -1118,7 +1119,7 @@ var app = {
 				ctx.closePath();
 				ctx.fill();
 		    } else if(prj.owner.type == 'laser') {
-		    	if(prj.target.hp > 0 && app.inRange(prj.target, prj.owner)) {
+		    	if(prj.target.hp > 0 && app.inRange(prj.owner, prj.target)) {
 			    	ctx.lineWidth = 1;
 					ctx.strokeStyle = prj.style;
 					ctx.beginPath();
@@ -1269,13 +1270,11 @@ var app = {
 				    		// Remove health
 					    	app.damageEntity(unit.target, unit.damage);
 					    	// Remove entity
-					    	if(unit.target.hp <= 0) {
-					    		clearInterval(current.damageInterval);
-					    		current.damageInterval = 0;
-					    		current.delay = false;
-					    	} else {
-					    		// Enemy
-					    	}
+					    	// if(unit.target.hp <= 0) {
+					    	// 	clearInterval(current.damageInterval);
+					    	// 	current.damageInterval = 0;
+					    	// 	current.delay = false;
+					    	// }
 						}
 					}
 		    	}, unit.rate);
