@@ -28,7 +28,7 @@ var app = {
 	mode:'normal', // Hard mode enables enemies to attack towers
 	initialize: function() {
 		// Init canvas
-		canvas.width  = app.width;
+		canvas.width = app.width;
 		canvas.height = app.height;
 		ctx = canvas.getContext("2d");
 		// Init entities
@@ -39,7 +39,7 @@ var app = {
 		app.smw = new Image();
 		app.smw.src = 'smw2.png';
 	},
-	// Environmnet
+	// Environment
 	clearCanvas: function() {
 		ctx.clearRect(0,0,app.width,app.height);
 	},
@@ -49,12 +49,13 @@ var app = {
           var starx = ~~(Math.random() * (app.width*2));
           var stary = ~~(Math.random() * app.height);
 
-          // Make the stars white
           starFill = "rgba(255, 255, 255, "+Math.random()+")";
+		  var colors = ['rgba(202,252,216,0.5)','rgba(4,191,191,0.5)'];
+		  var color = (Math.random()*colors.length - 1).toFixed(0);
+		  var blur = ((Math.random()*6)+1).toFixed(0);
 
-          // Get random size for stars
           starSize = ~~(Math.random() * 3);
-          app.stars.push([starFill, starx, stary, starSize]);
+          app.stars.push([starFill, starx, stary, starSize, colors[color], blur]);
         }
 	},
 	drawStars: function() {
@@ -67,6 +68,8 @@ var app = {
 			}
 			var x = app.stars[i][1];
 			var y = app.stars[i][2];
+			ctx.shadowBlur = app.stars[i][5];
+			ctx.shadowColor = app.stars[i][4];
 			// Draw the given star
 			ctx.fillStyle = app.stars[i][0];
 			ctx.beginPath();
@@ -74,6 +77,7 @@ var app = {
 			ctx.closePath();
 			ctx.fill();
 		}
+		ctx.shadowBlur = 0;
 	},
 	sun: {
 		pos: {
@@ -94,11 +98,14 @@ var app = {
 			}
 			var x = app.sun.pos.x;
 			var y = app.sun.pos.y;
+			ctx.shadowBlur = 10;
+			ctx.shadowColor = "#FF5200";
 			ctx.fillStyle = "#EEF66C";
 			ctx.beginPath();
 			ctx.arc(x, y, size, 0, Math.PI * 2, true);
 			ctx.closePath();
 			ctx.fill();
+			ctx.shadowBlur = 0;
 			// Glow
 			var innerRadius = 1;
 			var outerRadius = glow;
@@ -136,13 +143,41 @@ var app = {
 		var gradient = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
 		gradient.addColorStop(0, app.planet.shine);
 		gradient.addColorStop(1, app.planet.style);
+		ctx.shadowBlur = 20;
+		ctx.shadowColor = app.planet.defaultStyle;
 		ctx.fillStyle = gradient;
 		ctx.beginPath();
 		ctx.arc(x, y, outerRadius, 0, Math.PI * 2, true);
 		ctx.closePath();
 		ctx.fill();
+		ctx.shadowBlur = 0;
 	},
 	menus: {
+		main: {
+			start: {
+				x: 295.5,
+				y: 240,
+				w: 60,
+				h: 30,
+				str: "PLAY"
+			},
+			draw: function() {
+				// Draw menu items
+				var current = app.menus.main.start;
+				// Title
+				ctx.font = "28px Helvetica";
+				ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+				str = "PLANET DEFENSE";
+				var x = (app.width/2) - ctx.measureText(str).width/2;
+				ctx.fillText(str, x, 140);
+				// Start
+				ctx.font = "20px Helvetica";
+				var x = (app.width/2) - ctx.measureText(current.str).width/2; 
+				ctx.fillText(current.str, x, current.y);
+				// ctx.fillStyle = "red";
+				// ctx.fillRect(current.x,current.y-current.h,current.w,current.h);
+			}
+		},
 		gameplay: {
 			towers: {
 				height: 40,
@@ -250,7 +285,7 @@ var app = {
 				},
 			},
 			timer: {
-				startTime: Date.now(),
+				startTime: 0,
 				elapsed: function() {
 					return Date.now() - app.menus.gameplay.timer.startTime - app.menus.pause.elapsedTime;
 				},
@@ -384,11 +419,21 @@ var app = {
 			activate: function() {
 				if(!app.menus.gameOver.active) {
 					app.menus.gameOver.active = true;
-					app.state.current = 'gameover';
-					app.menus.gameOver.finalTime = app.menus.gameplay.timer.elapsedTime();
+					window.setTimeout(function() {
+						app.state.current = 'gameover';
+						app.menus.gameOver.finalTime = app.menus.gameplay.timer.elapsedTime();
+					}, 3000);
 				}
 			},
+			retry: {
+				x: 295.5,
+				y: 240,
+				w: 60,
+				h: 30,
+				str: "RETRY"
+			},
 			draw: function() {
+				var current = app.menus.gameOver.retry;
 				// Draw text
 				ctx.font = "30px Helvetica";
 				ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
@@ -401,6 +446,12 @@ var app = {
 				var str = "You survived: "+app.menus.gameOver.finalTime;
 				var x = (app.width/2) - (ctx.measureText(str).width/2);
 				ctx.fillText(str, x, 200);
+				// Draw retry
+				var x = (app.width/2) - (ctx.measureText(current.str).width/2);
+				ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+				ctx.fillText(current.str, x, current.y);
+				// ctx.fillStyle = "red";
+				// ctx.fillRect(current.x,current.y-current.h,current.w,current.h);
 			},
 			end: function() {
 				// End game
@@ -415,7 +466,12 @@ var app = {
 		},
 	},
 	state: {
-		current: 'gameplay',
+		current: 'mainmenu',
+		mainmenu: function() {
+			app.clearCanvas();
+			app.drawStars();
+			app.menus.main.draw();
+		},
 		gameplay: function() {
 			// Game is active
 			if(!app.menus.pause.active) {
@@ -451,27 +507,27 @@ var app = {
 				if(!app.menus.gameOver.active) {
 					app.wave.check();
 				}
-				// Game Over
-				if(app.menus.gameOver.active) {
-					app.menus.gameOver.end();
-				} else {
-					// Only draw UI while game is active
-					app.menus.gameplay.towers.draw();
-					app.menus.gameplay.timer.draw();
-					app.menus.gameplay.health.draw();
-					app.menus.pause.button.draw();
-					// Bottom
-					app.menus.gameplay.ticker.draw();
-					app.menus.gameplay.bottom.draw();
-					// Display tooltip
-					if(app.tooltip.active) {
-						app.tooltip.draw(); 
-					}
+				// Only draw UI while game is active
+				app.menus.gameplay.towers.draw();
+				app.menus.gameplay.timer.draw();
+				app.menus.gameplay.health.draw();
+				app.menus.pause.button.draw();
+				// Bottom
+				app.menus.gameplay.ticker.draw();
+				app.menus.gameplay.bottom.draw();
+				// Display tooltip
+				if(app.tooltip.active) {
+					app.tooltip.draw(); 
 				}
 			}
 			if(app.planet.hp <= 0) {
 				app.menus.gameOver.activate();
 			}
+		},
+		gameover: function() {
+			app.clearCanvas();
+			app.drawStars();
+			app.menus.gameOver.end();
 		},
 	},
 	player: {
@@ -481,10 +537,12 @@ var app = {
 		},
 	},
 	gameLoop: function() {
-		if(app.state.current == 'gameplay') {
+		if(app.state.current == 'mainmenu') {
+			app.state.mainmenu();
+		} else if(app.state.current == 'gameplay') {
 			app.state.gameplay();
 		} else if(app.state.current == 'gameover') {
-			app.state.gameplay();
+			app.state.gameover();
 		}
 	},
 	// Controls
@@ -496,63 +554,80 @@ var app = {
 		};
 	},
 	clickHandle: function(e) {
-		if(!app.menus.pause.active) { // Game is active
-			// Get mouse position
-			var mousePos = app.getMousePos(canvas, e);
-			mousePos.size = 1;
-			// console.log(mousePos);
-			// Tower placement
-			if(app.placeNewTower) {
-				if(mousePos.y > app.menus.gameplay.towers.height) {
-					if(!app.addTower.checkNewCollide()) {
-						app.buildTower(app.newTower.x, app.newTower.y, app.newTower);
-						app.placeNewTower = false;
+		// Get mouse position
+		var mousePos = app.getMousePos(canvas, e);
+		mousePos.size = 1;
+		// console.log(mousePos);
+		if(app.state.current == 'mainmenu') {
+			var current = app.menus.main.start;
+			if(checkButton(current.x,current.y-current.h,current.w,current.h)) {
+				app.state.current = 'gameplay';
+				app.menus.gameplay.timer.startTime = Date.now();
+			}
+		} else if(app.state.current == 'gameplay') {
+			if(!app.menus.pause.active) { // Game is active
+				// Tower placement
+				if(app.placeNewTower) {
+					if(mousePos.y > app.menus.gameplay.towers.height) {
+						if(!app.addTower.checkNewCollide()) {
+							app.buildTower(app.newTower.x, app.newTower.y, app.newTower);
+							app.placeNewTower = false;
+						}
 					}
-				}
-			} else {
-				// Display tooltips
-				app.tooltip.active = false;
-				app.towers.forEach(function(tower) {
-					if(app.collideDetect(mousePos, tower)) {
-						console.log("Tower clicked!");
-						app.tooltip.target = tower;
-						app.tooltip.active = true;
-					}
-				});
-				// Clicked on Menu
-				if(mousePos.y <= app.menus.gameplay.towers.height) {
-					function checkButton(x,y,w,h) {
-						var x1 = x;
-						var x2 = x1 + w;
-						var y1 = y;
-						var y2 = y1 + h;
-						if(mousePos.x > x1 && mousePos.x < x2) {
-							if(mousePos.y > y1 && mousePos.y < y2) {
-								return true;
-							} else {
-								return false;
+				} else {
+					// Display tooltips
+					app.tooltip.active = false;
+					app.towers.forEach(function(tower) {
+						if(app.collideDetect(mousePos, tower)) {
+							console.log("Tower clicked!");
+							app.tooltip.target = tower;
+							app.tooltip.active = true;
+						}
+					});
+					// Clicked on Menu
+					if(mousePos.y <= app.menus.gameplay.towers.height) {
+						// Tower clicked
+						var current = app.menus.gameplay.towers.buttons;
+						for(i=0;i < current.length;i++) {
+							if(checkButton(current[i].boundx,current[i].boundy,current[i].boundw,current[i].boundh)) {
+								// Add Tower
+								app.addTower.init(current[i]);
 							}
 						}
-					}
-					// Tower clicked
-					var current = app.menus.gameplay.towers.buttons;
-					for(i=0;i < current.length;i++) {
-						if(checkButton(current[i].boundx,current[i].boundy,current[i].boundw,current[i].boundh)) {
-							// Add Tower
-							app.addTower.init(current[i]);
-						}
-					}
-					// Pause clicked
-					var current = app.menus.pause.button;
-					if(checkButton(current.x,current.y,current.w,current.h)) {
-						if(app.state.current == 'gameplay') {
+						// Pause clicked
+						var current = app.menus.pause.button;
+						if(checkButton(current.x,current.y,current.w,current.h)) {
 							app.menus.pause.toggle();
 						}
 					}
 				}
+			} else { // Game is paused
+				app.menus.pause.active = false;
 			}
-		} else { // Game is paused
-			app.menus.pause.active = false;
+		} else if(app.state.current == 'gameover') {
+			var current = app.menus.main.start;
+			if(checkButton(current.x,current.y-current.h,current.w,current.h)) {
+				// Reset game
+				app.initPlanet();
+				app.enemies = [];
+				app.towers = [];
+				app.projectiles = [];
+				app.menus.gameplay.timer.startTime = Date.now();
+				app.state.current = 'gameplay';
+			}
+		}
+		function checkButton(x,y,w,h) {
+			var x1 = x;
+			var x2 = x1 + w;
+			var y1 = y;
+			var y2 = y1 + h;
+			if(mousePos.x > x1 && mousePos.x < x2) {
+				if(mousePos.y > y1 && mousePos.y < y2) {
+					return true;
+				} else {
+					return false;
+				}
+			}
 		}
 	},
 	addTower: {
