@@ -1,6 +1,7 @@
 /* Planetary Defense
 * - Defend your planets against attackers
 * - Build and upgrade defenses
+* TODO: Drag and drop towers. Explain buildable area better or remove it
 */
 var canvas;
 window.onload = function() {
@@ -33,7 +34,6 @@ var app = {
 		// Init entities
 		app.initStars();
 		app.initPlanet();
-		app.spawnEnemies();
 		// Start main loop
 		setInterval(app.gameLoop, 1000/app.FPS);
 		app.smw = new Image();
@@ -180,7 +180,7 @@ var app = {
 						boundw: 40,
 						boundh: 40,
 						price: 40,
-						range: 20,
+						range: 30,
 						style: "#EFC94C"
 					}, {
 						name: 'rocket',
@@ -844,27 +844,24 @@ var app = {
 		toSpawn: 0,
 		start: 0,
 		elapsed: 0,
-		qStart: 0,
-		qElapsed: 0,
+		// qStart: 0,
+		// qElapsed: 0,
 		ready: false,
 		level: 1,
 		types: [{
 			'type':'basic',
-			'num':5,
-			'delay':1,
+			'formation':1,
 		}, {
 			'type':'medium',
-			'num':2,
-			'delay':2,
+			'formation':2,
 		}, {
 			'type':'large',
-			'num':1,
-			'delay':5,
+			'formation':3,
 		}],
 		// waves: [[0,1],[0,1],[0,1],[0,1],[0,1],[1,1],[0,1],[2,1],[1,2],[0,2],[0,3]],
 		// [type, num, delay]
 		waves: [
-			[[0,1,0],[0,1,5]],
+			[[0,1,2],[0,1,5]],
 			[[0,1,0],[0,1,5]],
 		],
 		queue: [],
@@ -875,32 +872,24 @@ var app = {
 			// console.log(time%12);
 			if(app.wave.queue.length == 0) {
 				if(time%10 == 1) {
-					// if(app.wave.active) {
-						w.start = Date.now();
-						w.queue.push(w.waves[w.waveNum]);
-						// cooldown();
-					// }
+					w.start = Date.now();
+					w.queue.push(w.waves[w.waveNum]);
 				}
 			}
 			if(app.wave.queue.length > 0) {
 				// Spawn next queue wave
 				if(w.ready) {
-					w.qElapsed = Date.now() - w.qStart - app.menus.pause.elapsedTime;
-					console.log("qiDelay: "+w.types[w.queue[w.qNum][w.qi][0]].delay);
-					console.log("qElapsed: "+(w.qElapsed/1000).toFixed(0));
-					if((w.qElapsed/1000).toFixed(0) == w.types[w.queue[w.qNum][w.qi][0]].delay) {
-						w.spawn();
-						w.qStart = Date.now();
-					}
+					w.spawn();
+					w.ready = false;
+					w.start = Date.now();
 				} else {
 					// Updated elapsed time
 					w.elapsed = Date.now() - w.start - app.menus.pause.elapsedTime;
-					console.log((w.elapsed/1000).toFixed(0));
-					console.log((w.queue[w.qNum][w.qi][2]));
-					if((w.elapsed/1000).toFixed(0) > w.queue[w.qNum][w.qi][2]) {
+					// console.log((w.elapsed/1000).toFixed(0));
+					// console.log((w.queue[w.qNum][w.qi][2]));
+					if((w.elapsed/1000).toFixed(0) >= w.queue[w.qNum][w.qi][2]) {
 						// Spawn next queued item
 						w.ready = true;
-						w.qStart = Date.now();
 					}
 				}
 			}
@@ -918,7 +907,7 @@ var app = {
 			// Type
 			typeNum = w.queue[w.qNum][w.qi][0];
 			wt = w.types[typeNum];
-			app.spawnEnemies(1,wt.type);
+			app.spawnEnemies(wt.type,wt.formation);
 			--w.queue[w.qNum][w.qi][1];
 			if(w.queue[w.qNum][w.qi][1] <= 0) {
 				w.qi++;
@@ -947,15 +936,15 @@ var app = {
 		}
 	},
 	// Generate enemies
-	spawnEnemies: function(num, type) {
-		// Defaults
+	spawnEnemies: function(type, formation) {
+		// Default stats
 		var size = 10;
 		var range = 20;
 		var speed = 2;
 		var ammo = 2;
 		var rate = 500;
 		var damage = 2;
-		var maxhp = 10;
+		var maxhp = 5;
 		var value = 1;
 		if(type == 'basic') {
 			//
@@ -974,11 +963,18 @@ var app = {
 			maxhp = 50;
 			value = 10;
 		}
-		var x = app.width+(Math.random()*60)-10;
-		// var y = (app.height/2)+(Math.random()*60)-10;
 		var y = ~~((Math.random()*(app.height-40))+40);
-		for(i=0; i < num; i++) {
-			app.enemies.push({
+		var x = app.width+(Math.random()*60)-10;
+		var offset;
+		if(formation == 1) {
+			offset = [{
+				x: size + 10,
+			}];
+		}
+		for(i=0; i < 5; i++) {
+			// stats.x = x;
+			// stats.y = y;
+			var stats = {
 				'x':x,
 				'y':y,
 				'size':size,
@@ -997,7 +993,9 @@ var app = {
 				'style':"red",
 				'alive':true,
 				'value':value
-			});
+			}
+			app.enemies.push(stats);
+			x += offset[0].x;
 		}
 	},
 	updateTowers: function() {
@@ -1063,7 +1061,7 @@ var app = {
 				w = tower.size;
 				h = 4;
 				var x = tower.x;
-				var y = tower.y - 5;
+				var y = tower.y - 5 + tower.bobNum;
 				ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
 				ctx.fillRect(x, y, w, h);
 				// Health
