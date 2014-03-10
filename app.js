@@ -1158,8 +1158,25 @@ var app = {
 			// * (180 / Math.PI) //rads
 			ctx.rotate(rotation);
 			ctx.fillStyle = enemy.style;
+			ctx.strokeStyle = enemy.style;
 			ctx.translate(-transx, -transy);
-			ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+			// Test Shape
+			var x = enemy.x - enemy.size/2;
+			var y = enemy.y - enemy.size/2;
+
+			var y2 = y + enemy.size;
+
+			var x2 = x + enemy.size;
+			var y3 = y2 - enemy.size/2;
+			ctx.beginPath();
+			ctx.moveTo(x,y);
+			ctx.lineTo(x,y2);
+			ctx.lineTo(x2,y3);
+			ctx.lineTo(x,y);
+			ctx.closePath();
+			// ctx.fill();
+			ctx.stroke();
+			// ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
 			// ctx.drawImage(app.smw,177,1124,20,20,enemy.x,enemy.y,20,20);
 			ctx.restore();
 			// Targetting
@@ -1309,8 +1326,11 @@ var app = {
 		});
 	},
 	moveTarget: function(unit) {
+		// Get coords for center of target
+		var x = unit.target.x - unit.size/2;
+		var y = unit.target.y - unit.size/2;
 		// Rotate us to face the target
-	    var rotation = Math.atan2(unit.target.y - unit.y, unit.target.x - unit.x);
+	    var rotation = Math.atan2(y - unit.y, x - unit.x);
 	    // Move towards the target
 	    unit.x += Math.cos(rotation) * unit.speed;
 	    unit.y += Math.sin(rotation) * unit.speed;
@@ -1334,6 +1354,11 @@ var app = {
 	shootTarget: function(unit) {
 		// console.log(unit.ammo);
 		// console.log(unit.delay);
+		/* 
+		 * TODO: Fix this; fast bullets will overshoot targets.
+		 * Loop through moving one pixel at a time (detect collision/etc),
+		 * then draw at final destination per frame.
+		 */
 		if(unit.type == 'basic') {
 			if(unit.ammo > 0) {
 				if(!unit.delay) {
@@ -1638,8 +1663,6 @@ var app = {
 		// Explode before removing reference
 		app.particles.init(unit);
 		// Remove from proper array
-		console.log("Removing entity!");
-		console.log('Entity array: '+unit.array.length);
 		if(unit.array) {
 			app.player.addCash(unit.value);
 			unit.alive = false;
