@@ -268,8 +268,8 @@ var app = {
 						}
 						// Center preview
 						var x = context.buttons[i].x - 6;
-						ctx.fillStyle = style;
-						ctx.fillRect(x, context.buttons[i].y, 12, 12);
+						ctx.strokeStyle = style;
+						ctx.strokeRect(x, context.buttons[i].y, 12, 12);
 						// Draw price
 						if(app.player.cash >= context.buttons[i].price) {
 							ctx.fillStyle = "rgba(255, 255, 255, 1)";
@@ -504,9 +504,9 @@ var app = {
 					app.addTower.updateNewTower();
 				}
 				// Spawn enemies
-				if(!app.menus.gameOver.active) {
+				// if(!app.menus.gameOver.active) {
 					app.wave.check();
-				}
+				// }
 				// Only draw UI while game is active
 				app.menus.gameplay.towers.draw();
 				app.menus.gameplay.timer.draw();
@@ -612,6 +612,8 @@ var app = {
 				app.enemies = [];
 				app.towers = [];
 				app.projectiles = [];
+				app.player.cash = 50;
+				app.wave.reset();
 				app.menus.gameplay.timer.startTime = Date.now();
 				app.state.current = 'gameplay';
 			}
@@ -1008,7 +1010,20 @@ var app = {
 				// TODO
 				// Increase wave stats based on wave level
 			}
-		}
+		},
+		reset: function() {
+			var w = app.wave;
+			w.active = true;
+			w.waveNum = 0;
+			w.qNum = 0;
+			w.qi = 0;
+			w.toSpawn = 0;
+			w.start = 0;
+			w.elapsed = 0;
+			w.ready = false;
+			w.level = 1;
+			w.queue = [];
+		},
 	},
 	// Generate enemies
 	spawnEnemies: function(type, formation) {
@@ -1087,7 +1102,19 @@ var app = {
 				tower.bobNum -= 0.05;
 			}
 			var y = tower.bobNum + tower.y;
+
 			// Draw Tower
+			function drawTower() {
+				ctx.fillStyle = tower.style;
+				ctx.strokeStyle = tower.style;
+				ctx.strokeRect(tower.x, y, tower.size, tower.size);
+				// ctx.drawImage(app.smw,9,244,18,18,tower.x,y,20,20);
+				if(tower.type == 'basic') {
+					ctx.strokeRect(tower.x+tower.size/4, y+tower.size/4, tower.size/2, tower.size/2);
+				} else if(tower.type == 'laser') {
+					ctx.fillRect(tower.x+tower.size/4, y+tower.size/4, tower.size/2, tower.size/2);
+				}
+			}
 			if(tower.target) {
 				ctx.save();
 				var transx = tower.x + 0.5*tower.size;
@@ -1096,15 +1123,11 @@ var app = {
 				var rotation = Math.atan2(tower.target.y - y, tower.target.x - tower.x);
 				// * (180 / Math.PI) //rads
 				ctx.rotate(rotation);
-				ctx.fillStyle = tower.style;
 				ctx.translate(-transx, -transy);
-				ctx.fillRect(tower.x, y, tower.size, tower.size);
-				// ctx.drawImage(app.smw,9,244,18,18,tower.x,y,20,20);
+				drawTower();
 				ctx.restore();
 			} else {
-				ctx.fillStyle = tower.style;
-				ctx.fillRect(tower.x, y, tower.size, tower.size);
-				// ctx.drawImage(app.smw,9,164,18,18,tower.x,y,20,20);
+				drawTower();
 			}
 
 			if(tower.type != 'shock') {
@@ -1364,8 +1387,8 @@ var app = {
 				if(!unit.delay) {
 					var angle = Math.atan2(unit.target.y - unit.y, unit.target.x - unit.x);
 					app.projectiles.push({
-						'x':unit.x,
-						'y':unit.y,
+						'x':unit.x+unit.size/2,
+						'y':unit.y+unit.size/2,
 						'target':unit.target,
 						'size':1.5,
 						'owner':unit,
