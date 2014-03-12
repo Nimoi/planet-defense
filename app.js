@@ -190,7 +190,7 @@ var app = {
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
-						price: 15,
+						price: 10,
 						range: 60,
 						style: 'rgba(0,132,255,1)'
 					}, {
@@ -202,7 +202,7 @@ var app = {
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
-						price: 25,
+						price: 20,
 						range: 50,
 						style: "#FF8638"
 					}, {
@@ -214,7 +214,7 @@ var app = {
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
-						price: 40,
+						price: 30,
 						range: 30,
 						style: "#EFC94C"
 					}, {
@@ -226,7 +226,7 @@ var app = {
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
-						price: 60,
+						price: 40,
 						range: 40,
 						style: "#F3210A"
 					},
@@ -614,6 +614,7 @@ var app = {
 				app.projectiles = [];
 				app.player.cash = 50;
 				app.wave.reset();
+				app.menus.gameOver.active = false;
 				app.menus.gameplay.timer.startTime = Date.now();
 				app.state.current = 'gameplay';
 			}
@@ -850,7 +851,7 @@ var app = {
 	},
 	buildTower: function(x, y, tower) {
 		if(tower.type == 'basic') {
-			app.player.cash -= 15;
+			app.player.cash -= 10;
 			var size = 12;
 			var ammo = 3;
 			var rate = 500;
@@ -860,7 +861,7 @@ var app = {
 			var image;
 		}
 		if(tower.type == 'laser') {
-			app.player.cash -= 25;
+			app.player.cash -= 20;
 			var size = 12;
 			var ammo = 1;
 			var rate = 100;
@@ -870,7 +871,7 @@ var app = {
 			var image;
 		}
 		if(tower.type == 'shock') {
-			app.player.cash -= 40;
+			app.player.cash -= 30;
 			var size = 12;
 			var ammo = 1;
 			var rate = 1000;
@@ -880,7 +881,7 @@ var app = {
 			var image;
 		}
 		if(tower.type == 'rocket') {
-			app.player.cash -= 60;
+			app.player.cash -= 40;
 			var size = 12;
 			var ammo = 2;
 			var rate = 1500;
@@ -929,17 +930,20 @@ var app = {
 			'type':'basic',
 			'formation':1,
 		}, {
-			'type':'medium',
-			'formation':2,
+			'type':'slow',
+			'formation':1,
 		}, {
-			'type':'large',
-			'formation':3,
+			'type':'fast',
+			'formation':1,
+		}, {
+			'type':'fast',
+			'formation':1,
 		}],
 		// waves: [[0,1],[0,1],[0,1],[0,1],[0,1],[1,1],[0,1],[2,1],[1,2],[0,2],[0,3]],
 		// [type, num, delay]
 		waves: [
-			[[0,1,2],[0,1,5]],
-			[[0,1,0],[0,1,5]],
+			[[0,1,8],[1,1,5]],
+			[[2,1,5],[2,1,5]],
 		],
 		queue: [],
 		check: function() {
@@ -1030,7 +1034,7 @@ var app = {
 		// Default stats
 		var size = 10;
 		var range = 20;
-		var speed = 2;
+		var speed = 1.5;
 		var ammo = 2;
 		var rate = 500;
 		var damage = 2;
@@ -1039,19 +1043,16 @@ var app = {
 		if(type == 'basic') {
 			//
 		}
-		if(type == 'medium') {
-			size = 14;
-			ammo = 3;
-			damage = 4;
-			maxhp = 25;
-			value = 5;
+		if(type == 'slow') {
+			size = 12;
+			maxhp = 20;
+			value = 2;
+			speed = 1;
 		}
-		if(type == 'large') {
-			size = 20;
-			ammo = 4;
-			damage = 5;
-			maxhp = 50;
-			value = 10;
+		if(type == 'fast') {
+			size = 8;
+			maxhp = 3;
+			speed = 2;
 		}
 		var y = ~~((Math.random()*(app.height-40))+40);
 		var x = app.width+(Math.random()*60)-10;
@@ -1184,8 +1185,8 @@ var app = {
 			ctx.strokeStyle = enemy.style;
 			ctx.translate(-transx, -transy);
 			// Test Shape
-			var x = enemy.x - enemy.size/2;
-			var y = enemy.y - enemy.size/2;
+			var x = enemy.x;
+			var y = enemy.y;
 
 			var y2 = y + enemy.size;
 
