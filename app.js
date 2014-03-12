@@ -936,14 +936,14 @@ var app = {
 			'type':'fast',
 			'formation':1,
 		}, {
-			'type':'fast',
+			'type':'boss',
 			'formation':1,
 		}],
 		// waves: [[0,1],[0,1],[0,1],[0,1],[0,1],[1,1],[0,1],[2,1],[1,2],[0,2],[0,3]],
 		// [type, num, delay]
 		waves: [
-			[[0,1,8],[1,1,5]],
-			[[2,1,5],[2,1,5]],
+			[[0,1,5],[1,1,3],[2,1,5],[3,1,1]],
+			[[0,1,10],[1,1,5],[2,1,10],[3,1,3]],
 		],
 		queue: [],
 		check: function() {
@@ -987,8 +987,9 @@ var app = {
 			w = app.wave;
 			// Type
 			typeNum = w.queue[w.qNum][w.qi][0];
+			num = w.queue[w.qNum][w.qi][2];
 			wt = w.types[typeNum];
-			app.spawnEnemies(wt.type,wt.formation);
+			app.spawnEnemies(wt.type,wt.formation,num);
 			--w.queue[w.qNum][w.qi][1];
 			if(w.queue[w.qNum][w.qi][1] <= 0) {
 				w.qi++;
@@ -1030,7 +1031,7 @@ var app = {
 		},
 	},
 	// Generate enemies
-	spawnEnemies: function(type, formation) {
+	spawnEnemies: function(type, formation, num) {
 		// Default stats
 		var size = 10;
 		var range = 20;
@@ -1054,6 +1055,11 @@ var app = {
 			maxhp = 3;
 			speed = 2;
 		}
+		if(type == 'boss') {
+			size = 15;
+			maxhp = 25;
+			speed = 0.5;
+		}
 		var y = ~~((Math.random()*(app.height-40))+40);
 		var x = app.width+(Math.random()*60)-10;
 		var offset;
@@ -1062,7 +1068,7 @@ var app = {
 				x: size + 10,
 			}];
 		}
-		for(i=0; i < 5; i++) {
+		for(i=0; i < num; i++) {
 			// stats.x = x;
 			// stats.y = y;
 			var stats = {
@@ -1243,7 +1249,17 @@ var app = {
 		    	// Check collision
 		    	if(prj.target.alive) {
 					app.moveTarget(prj);
-			    	if(app.collideDetect(prj, prj.target)) {
+					var collide = false;
+					var speed = 1;
+					if(prj.speed > 1) {
+						speed = prj.speed.toFixed(0);
+					}
+					for(i=0;i<speed;i++) {
+						if(app.collideDetect(prj, prj.target)) {
+							collide = true;
+						}
+					}
+			    	if(collide) {
 				    	// Return ammo
 				    	++prj.owner.ammo;
 				    	// Remove health
@@ -1350,6 +1366,7 @@ var app = {
 		});
 	},
 	moveTarget: function(unit) {
+
 		// Get coords for center of target
 		var x = unit.target.x - unit.size/2;
 		var y = unit.target.y - unit.size/2;
