@@ -573,16 +573,40 @@ var app = {
 						}
 					}
 				} else {
+					var tip = false;
 					// Display tooltips
-					app.tooltip.active = false;
 					app.towers.forEach(function(tower) {
 						if(app.collideDetect(mousePos, tower)) {
 							console.log("Tower clicked!");
 							app.tooltip.target = tower;
 							app.tooltip.active = true;
+							tip = true;
 						}
 					});
-					// Clicked on Menu
+					// Clicked on tooltip
+					var bottom = app.menus.gameplay.bottom;
+					var ticker = app.menus.gameplay.ticker;
+					var w = 160;
+					var h = 40;
+					var x = 0;
+					var y = app.height - bottom.height - ticker.height - h - 10;
+					if(checkButton(x,y,w,h)) {
+						// Tooltip clicked
+						tip = true;
+						console.log('Tooltip clicked');
+					}
+					// Clicked on bottom menu
+					y = app.height - bottom.height;
+					w = app.width;
+					if(checkButton(0,y,w,bottom.height)) {
+						// Bottom menu clicked
+						tip = true;
+						console.log('Bottom menu clicked');
+					}
+					if(!tip) {
+						app.tooltip.active = false;
+					}
+					// Clicked on top menu
 					if(mousePos.y <= app.menus.gameplay.towers.height) {
 						// Tower clicked
 						var current = app.menus.gameplay.towers.buttons;
@@ -610,6 +634,7 @@ var app = {
 				app.enemies = [];
 				app.towers = [];
 				app.projectiles = [];
+				app.particles.items = [];
 				app.player.cash = 50;
 				app.wave.reset();
 				app.menus.gameOver.active = false;
@@ -799,7 +824,6 @@ var app = {
 					ctx.fillText(str, x+strlen, y);
 					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
 				}
-				ctx.strokeStyle = "rgba(255,255,255,1)";
 			}
 		},
 	},
