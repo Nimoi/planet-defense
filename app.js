@@ -1,7 +1,12 @@
 /* Planetary Defense
 * - Defend your planets against attackers
 * - Build and upgrade defenses
-* TODO: Drag and drop towers. Explain buildable area better or remove it
+* TODOs: 
+* - Drag and drop towers.
+* - Explain buildable area better or remove it.
+* - Indicate where enemies are coming from on the map ~5 seconds before they spawn
+* - Fix laser tower doing damage while pause is active (check others)
+* - Shock tower needs to check if entities exist before trying to change properties (rocket too?)
 */
 var canvas;
 window.onload = function() {
@@ -586,7 +591,7 @@ var app = {
 					// Clicked on tooltip
 					var bottom = app.menus.gameplay.bottom;
 					var ticker = app.menus.gameplay.ticker;
-					var w = 160;
+					var w = 200;
 					var h = 40;
 					var x = 0;
 					var y = app.height - bottom.height - ticker.height - h - 10;
@@ -738,6 +743,70 @@ var app = {
 	tooltip: {
 		active: false,
 		target: 0,
+		buttons: {
+			sell: {
+				dim: function() {
+					var bottom = app.menus.gameplay.bottom;
+					var ticker = app.menus.gameplay.ticker;
+					var w = 80;
+					var h = 20;
+					var x = 5;
+					var y = app.height - bottom.height - ticker.height - h - 20;
+					var dim = {
+						'x':x,
+						'y':y,
+						'w':w,
+						'h':h
+					};
+					return dim;
+				},
+				draw: function(unit) {
+					// BG
+					var dim = app.tooltip.buttons.sell.dim();
+					ctx.fillStyle = "rgba(255,255,255,0.1)";
+					ctx.fillRect(dim.x, dim.y, dim.w, dim.h);
+					// STR
+					var price = unit.value*0.75;
+					var str = "Sell $"+price.toFixed(0);
+					var x = dim.x+dim.w/2-ctx.measureText(str).width/2;
+					ctx.font = "bold 12px Helvetica";
+					ctx.fillStyle = "rgba(255,255,255,1)";
+					ctx.fillText(str, x, dim.y+15);
+				},
+			},
+			upgrade: {
+				dim: function() {
+					var current = app.tooltip.buttons;
+					var bottom = app.menus.gameplay.bottom;
+					var ticker = app.menus.gameplay.ticker;
+					var sellDim = current.sell.dim();
+					var w = 100;
+					var h = 20;
+					var x = sellDim.x + sellDim.w + 5;
+					var y = app.height - bottom.height - ticker.height - h - 20;
+					var dim = {
+						'x':x,
+						'y':y,
+						'w':w,
+						'h':h
+					};
+					return dim;
+				},
+				draw: function(unit) {
+					// BG
+					var dim = app.tooltip.buttons.upgrade.dim();
+					ctx.fillStyle = "rgba(255,255,255,0.1)";
+					ctx.fillRect(dim.x, dim.y, dim.w, dim.h);
+					// STR
+					var price = unit.value*1.75;
+					var str = "Upgrade $"+price.toFixed(0);
+					var x = dim.x+dim.w/2-ctx.measureText(str).width/2;
+					ctx.font = "bold 12px Helvetica";
+					ctx.fillStyle = "rgba(255,255,255,1)";
+					ctx.fillText(str, x, dim.y+15);
+				},
+			},
+		},
 		draw: function() {
 			if(app.tooltip.target) {
 				var unit = app.tooltip.target;
@@ -752,8 +821,10 @@ var app = {
 				ctx.closePath();
 				ctx.stroke();
 				// UPGRADE/SELL
+				app.tooltip.buttons.sell.draw(unit);
+				app.tooltip.buttons.upgrade.draw(unit);
 				// Panel BG
-				var w = 160;
+				var w = 200;
 				var h = 40;
 				x = 0;
 				y = app.height - bottom.height - ticker.height - h - 10;
@@ -763,7 +834,6 @@ var app = {
 				ctx.fillStyle = "rgba(0,0,0,0.4)";
 				ctx.fillRect(x, y, w, h);
 				ctx.lineWidth = 1;
-				// TODO: Upgrade/Sell buttons
 				// Bottom
 				y = app.height - bottom.height;
 				// Stats
@@ -830,7 +900,7 @@ var app = {
 	level : {
 		next: function(tower) {
 			var level = tower.level + 1;
-			var price = level*tower.price;
+			var price = level*tower.value;
 			if(tower.type == 'basic') {
 				var range = 10;
 				var ammo = 1;
@@ -932,7 +1002,7 @@ var app = {
 			'style':style,
 			'image':image,
 			'level':1,
-			'price':(tower.price*1.3).toFixed(1),
+			'value':tower.price,
 			'alive':true,
 			'bob':0,
 			'bobNum':0
