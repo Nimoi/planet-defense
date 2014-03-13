@@ -380,8 +380,6 @@ var app = {
 					} else {
 						app.menus.pause.elapsedTime = app.menus.pause.elapsedTime + (Date.now() - app.menus.pause.pauseTime);
 						app.menus.pause.active = false;
-						console.log('Time paused: '+app.menus.pause.elapsedTime);
-						console.log('Time played: '+app.elapsedTime());
 					}
 				}
 			},
@@ -602,7 +600,7 @@ var app = {
 					}
 				}
 			} else { // Game is paused
-				app.menus.pause.active = false;
+				app.menus.pause.toggle();
 			}
 		} else if(app.state.current == 'gameover') {
 			var current = app.menus.main.start;
@@ -721,13 +719,13 @@ var app = {
 				var bottom = app.menus.gameplay.bottom;
 				var ticker = app.menus.gameplay.ticker;
 				// Show range
-				ctx.fillStyle = "rgba(100,100,100,0.2)";
+				ctx.strokeStyle = unit.style;
 				var x = unit.x +(unit.size/2);
 				var y = unit.y +(unit.size/2);
 				ctx.beginPath();
 				ctx.arc(x, y, unit.range, 0, Math.PI * 2, true);
 				ctx.closePath();
-				ctx.fill();
+				ctx.stroke();
 				// UPGRADE/SELL
 				// Panel BG
 				var w = 160;
@@ -739,6 +737,7 @@ var app = {
 				ctx.strokeRect(x, y, w, h);
 				ctx.fillStyle = "rgba(0,0,0,0.4)";
 				ctx.fillRect(x, y, w, h);
+				ctx.lineWidth = 1;
 				// TODO: Upgrade/Sell buttons
 				// Bottom
 				y = app.height - bottom.height;
@@ -800,6 +799,7 @@ var app = {
 					ctx.fillText(str, x+strlen, y);
 					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
 				}
+				ctx.strokeStyle = "rgba(255,255,255,1)";
 			}
 		},
 	},
@@ -851,7 +851,7 @@ var app = {
 	},
 	buildTower: function(x, y, tower) {
 		if(tower.type == 'basic') {
-			app.player.cash -= 10;
+			app.player.cash -= tower.price;
 			var size = 12;
 			var ammo = 3;
 			var rate = 500;
@@ -861,7 +861,7 @@ var app = {
 			var image;
 		}
 		if(tower.type == 'laser') {
-			app.player.cash -= 20;
+			app.player.cash -= tower.price;
 			var size = 12;
 			var ammo = 1;
 			var rate = 100;
@@ -871,7 +871,7 @@ var app = {
 			var image;
 		}
 		if(tower.type == 'shock') {
-			app.player.cash -= 30;
+			app.player.cash -= tower.price;
 			var size = 12;
 			var ammo = 1;
 			var rate = 1000;
@@ -881,7 +881,7 @@ var app = {
 			var image;
 		}
 		if(tower.type == 'rocket') {
-			app.player.cash -= 40;
+			app.player.cash -= tower.price;
 			var size = 12;
 			var ammo = 2;
 			var rate = 1500;
@@ -1098,15 +1098,15 @@ var app = {
 	updateTowers: function() {
 		app.towers.forEach(function(tower) {
 			// Bob
-			if(tower.bobNum <= -2) {
+			if(tower.bobNum <= -1) {
 				tower.bob = 1;
-			} else if(tower.bobNum >= 2) {
+			} else if(tower.bobNum >= 1) {
 				tower.bob = 0;
 			}
 			if(tower.bob) {
-				tower.bobNum += 0.05;
+				tower.bobNum += 0.02;
 			} else {
-				tower.bobNum -= 0.05;
+				tower.bobNum -= 0.02;
 			}
 			var y = tower.bobNum + tower.y;
 
@@ -1170,10 +1170,11 @@ var app = {
 				ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
 				ctx.fillRect(x, y, w, h);
 				// Health
+				hpw = (tower.hp * w)/tower.maxhp;
 				y += 1;
 				h -= 2;
 				ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
-				ctx.fillRect(x, y, tower.hp, h);
+				ctx.fillRect(x, y, hpw, h);
 			}
 		});
 	},
@@ -1236,10 +1237,11 @@ var app = {
 				ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
 				ctx.fillRect(x, y, w, h);
 				// Health
+				hpw = (enemy.hp * w)/enemy.maxhp;
 				y += 1;
 				h -= 2;
 				ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
-				ctx.fillRect(x, y, enemy.hp, h);
+				ctx.fillRect(x, y, hpw, h);
 			}
 		});
 	},
