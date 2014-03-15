@@ -3,10 +3,13 @@
 * - Build and upgrade defenses
 * TODOs: 
 * - Drag and drop towers.
-* - Explain buildable area better or remove it.
+* - Tooltip should explain each button on hover
+* - Explain buildable area better
 * - Indicate where enemies are coming from on the map ~5 seconds before they spawn
 * - Fix laser tower doing damage while pause is active (check others)
 * - Shock tower needs to check if entities exist before trying to change properties (rocket too?)
+* - Ensure projectiles don't overshoot their targets
+* - Planet should crack to display damage
 */
 var canvas;
 window.onload = function() {
@@ -331,10 +334,12 @@ var app = {
 					ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
 					ctx.fillRect(x, y, w, h);
 					// Health
-					y += 1;
-					h -= 2;
-					ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
-					ctx.fillRect(x, y, app.planet.hp, h);
+					if(app.planet.hp > 0) {
+						y += 1;
+						h -= 2;
+						ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
+						ctx.fillRect(x, y, app.planet.hp, h);
+					}
 				},
 			},
 			ticker: {
@@ -535,8 +540,13 @@ var app = {
 	},
 	player: {
 		cash: 50,
-		addCash: function(amount) {
-			app.player.cash += amount;
+		updateCash: function(amount) {
+			if(amount > 0) {
+				// Color green
+			} else {
+				// color red
+			}
+			app.player.cash = parseInt(app.player.cash) + parseInt(amount);
 		},
 	},
 	gameLoop: function() {
@@ -598,6 +608,19 @@ var app = {
 					if(checkButton(x,y,w,h)) {
 						// Tooltip clicked
 						tip = true;
+						sell = app.tooltip.buttons.sell.dim();
+						if(checkButton(sell.x,sell.y,sell.w,sell.h)) {
+							if(app.tooltip.target) {
+								app.removeEntity(app.tooltip.target);
+								var value = (app.tooltip.target.value*0.75).toFixed(0);
+								console.log('Before: '+app.player.cash);
+								console.log("Adding: "+value);
+								app.player.updateCash(value);
+								console.log("After: "+app.player.cash);
+								app.tooltip.target = 0;
+							}
+							tip = false;
+						}
 						console.log('Tooltip clicked');
 					}
 					// Clicked on bottom menu
@@ -1206,9 +1229,12 @@ var app = {
 
 			// Draw Tower
 			function drawTower() {
-				ctx.fillStyle = tower.style;
+				ctx.fillStyle = "rgba(20,20,20,1)";
 				ctx.strokeStyle = tower.style;
+				ctx.fillRect(tower.x, y, tower.size, tower.size);
 				ctx.strokeRect(tower.x, y, tower.size, tower.size);
+				
+				ctx.fillStyle = tower.style;
 				// ctx.drawImage(app.smw,9,244,18,18,tower.x,y,20,20);
 				if(tower.type == 'basic') {
 					ctx.strokeRect(tower.x+tower.size/4, y+tower.size/4, tower.size/2, tower.size/2);
@@ -1216,6 +1242,23 @@ var app = {
 					ctx.fillRect(tower.x+tower.size/4, y+tower.size/4, tower.size/2, tower.size/2);
 				}
 			}
+			// Anchor
+			ctx.beginPath();
+			// move to the last tracked coordinates in the set, then draw a line to the current x and y
+			ax = tower.x + tower.size/2;
+			ay = y + tower.size/2;
+			ctx.moveTo(ax, ay);
+			ay += 14;
+			ctx.lineTo(ax, ay);
+			ctx.strokeStyle = tower.style;
+			ctx.stroke();
+			ctx.closePath();
+			ctx.fillStyle = tower.style;
+			ctx.beginPath();
+			ctx.arc(ax, ay, 2, 0, Math.PI * 2, true);
+			ctx.closePath();
+			ctx.fill();
+			// Tower
 			if(tower.target) {
 				ctx.save();
 				var transx = tower.x + 0.5*tower.size;
@@ -1351,6 +1394,7 @@ var app = {
 						speed = prj.speed.toFixed(0);
 					}
 					for(i=0;i<speed;i++) {
+						// TODO: calculate each step and check for collision
 						if(app.collideDetect(prj, prj.target)) {
 							collide = true;
 						}
@@ -1410,9 +1454,9 @@ var app = {
 		    } else if(prj.owner.type == 'shock') {
 		    	var x = prj.owner.x + (prj.owner.size/2);
 		    	var y = prj.owner.y + (prj.owner.size/2);
-		    	prj.size -= 2;
-		    	if(prj.size <= 0) {
-		    		prj.size = 20;
+		    	prj.size -= 3;
+		    	if(prj.owner.shockStyle == "rgba(69,178,157,0)") {
+		    		prj.size = prj.maxSize;
 		    	}
 		    	// Draw prj
 			    ctx.fillStyle = prj.owner.shockStyle;
@@ -1420,6 +1464,10 @@ var app = {
 				ctx.arc(x, y, prj.size, 0, Math.PI * 2, true);
 				ctx.closePath();
 				ctx.fill();
+				// Destroy if owner removed
+				if(prj.owner.alive == false || prj.owner == null) {
+					prj.alive = false;
+				}
 		    } else if(prj.owner.type == 'rocket') {
 		    	if(prj.explode == 0) {
 					app.moveTarget(prj);
@@ -1494,7 +1542,7 @@ var app = {
 		/* 
 		 * TODO: Fix this; fast bullets will overshoot targets.
 		 * Loop through moving one pixel at a time (detect collision/etc),
-		 * then draw at final destination per frame.
+		 * then draw at final destination.
 		 */
 		if(unit.type == 'basic') {
 			if(unit.ammo > 0) {
@@ -1504,7 +1552,7 @@ var app = {
 						'x':unit.x+unit.size/2,
 						'y':unit.y+unit.size/2,
 						'target':unit.target,
-						'size':1.5,
+						'size':1,
 						'owner':unit,
 						'alive':true,
 						'style':'#F1A20D',
@@ -1565,7 +1613,8 @@ var app = {
 					'x':unit.x,
 					'y':unit.y,
 					'speed':1,
-					'size':20,
+					'size':unit.range,
+					'maxSize':unit.range,
 					'owner':unit,
 					'alive':true,
 					// 'style':'rgba(69,178,157,0.5)',
@@ -1573,25 +1622,29 @@ var app = {
 				});
 				current.shockStyle = "rgba(69,178,157,0)";
 				current.damageInterval = setInterval(function() {
-					var innerRadius = 1;
-					var outerRadius = 20;
-					var gradient = ctx.createRadialGradient(current.x+6, current.y+6, innerRadius, current.x+6, current.y+6, outerRadius);
-					gradient.addColorStop(0, "rgba(239,201,76,0)");
-					gradient.addColorStop(1, "rgba(239,201,76,1)");
-					// Flash on shock
-			    	current.shockStyle = gradient;
-			    	// current.shockStyle = "rgba(69,178,157,0.4)";
-			    	window.setTimeout(function() {
-					    current.shockStyle = "rgba(69,178,157,0)";
-					}, 200);
-		    		// Damage nearby enemies
-		    		// TODO: Fix shock towers may be attempting to slow enemies that aren't alive
-		    		for(i=0;i<app.enemies.length;i++) {
-		    			if(app.inRange(unit,app.enemies[i])) {
-		    				app.damageEntity(app.enemies[i],unit.damage);
-					    	app.enemies[i].speed = 1;
-		    			}
-		    		}
+					if(current.alive) {
+						var innerRadius = 1;
+						var outerRadius = unit.range;
+						var gradient = ctx.createRadialGradient(current.x+6, current.y+6, innerRadius, current.x+6, current.y+6, outerRadius);
+						gradient.addColorStop(0, "rgba(239,201,76,0)");
+						gradient.addColorStop(1, "rgba(239,201,76,1)");
+						// Flash on shock
+				    	current.shockStyle = gradient;
+				    	// current.shockStyle = "rgba(69,178,157,0.4)";
+				    	window.setTimeout(function() {
+						    current.shockStyle = "rgba(69,178,157,0)";
+						}, 250);
+			    		// Damage nearby enemies
+			    		// TODO: Fix shock towers may be attempting to slow enemies that aren't alive
+			    		for(i=0;i<app.enemies.length;i++) {
+			    			if(app.inRange(unit,app.enemies[i])) {
+			    				app.damageEntity(app.enemies[i],unit.damage);
+						    	app.enemies[i].speed = 1;
+			    			}
+			    		}
+					} else {
+						clearInterval(current.damageInterval);
+					}
 		    	}, unit.rate);
 				--unit.ammo;
 			}
@@ -1725,7 +1778,7 @@ var app = {
 		hue: 0,
 		items: [],
 		init: function(unit) {
-			var particleCount = 20;
+			var particleCount = 10;
 			if(unit == app.planet) {
 				particleCount = 200;
 			}
@@ -1801,7 +1854,9 @@ var app = {
 		app.particles.init(unit);
 		// Remove from proper array
 		if(unit.array) {
-			app.player.addCash(unit.value);
+			if(unit.array == app.enemies) {
+				app.player.updateCash(unit.value);
+			}
 			unit.alive = false;
 		} else {
 			// Planet
@@ -1826,10 +1881,4 @@ var app = {
 	randColor: function() {
 		return '#'+ ('000000' + Math.floor(Math.random()*16777215).toString(16)).slice(-6);
 	},
-}
-
-ntils = {
-	colorLog: function(msg, color) {
-		console.log("%c" + msg, "color:" + color + ";font-weight:bold;");
-	}
 }
