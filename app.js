@@ -1029,7 +1029,7 @@ var app = {
 			'delay': false,
 			'target':'',
 			'type':tower.type,
-			'array':app.towers,
+			'alignment':'player',
 			'hp':hp,
 			'maxhp':hp,
 			'damage':damage,
@@ -1211,7 +1211,7 @@ var app = {
 				'delay': false,
 				'target':app.planet,
 				'type':'basic',
-				'array':app.enemies,
+				'alignment':'invaders',
 				'hp':maxhp,
 				'maxhp':maxhp,
 				'damage':damage,
@@ -1568,7 +1568,7 @@ var app = {
 						'owner':unit,
 						'alive':true,
 						'style':'#F1A20D',
-						'array':app.projectiles,
+						'alignment':'projectiles',
 						// set a random angle in all possible directions, in radians
 						'angle': angle,
 						'speed':4,
@@ -1599,7 +1599,7 @@ var app = {
 					'owner':unit,
 					'alive':true,
 					'style':'#F1A20D',
-					'array':app.projectiles
+					'alignment':'projectiles'
 				});
 				current.damageInterval = setInterval(function() {
 					if(unit.target) {
@@ -1630,7 +1630,7 @@ var app = {
 					'owner':unit,
 					'alive':true,
 					// 'style':'rgba(69,178,157,0.5)',
-					'array':app.projectiles
+					'alignment':'projectiles'
 				});
 				current.shockStyle = "rgba(69,178,157,0)";
 				current.damageInterval = setInterval(function() {
@@ -1672,7 +1672,7 @@ var app = {
 						'owner':unit,
 						'alive':true,
 						'style':'#F1A20D',
-						'array':app.projectiles,
+						'alignment':'projectiles',
 						'explode':0,
 						'range':20,
 						'rad':2
@@ -1865,12 +1865,13 @@ var app = {
 		// Explode before removing reference
 		app.particles.init(unit);
 		// Remove from proper array
-		if(unit.array) {
-			if(unit.array == app.enemies) {
+		if(unit.alignment) {
+			if(unit.alignment == 'invaders') {
+				console.log("ADDED CASH");
 				app.player.updateCash(unit.value);
 			}
 			unit.alive = false;
-		} else {
+		} else if(unit == app.planet) {
 			// Planet
 			console.log(app.planet.hp);
 			app.planet.shine = "rgba(0,0,0,0)";
