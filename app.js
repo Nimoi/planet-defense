@@ -591,7 +591,19 @@ var app = {
 					var tip = false;
 					// Display tooltips
 					app.towers.forEach(function(tower) {
-						if(app.collideDetect(mousePos, tower)) {
+						// Clicked on a tower?
+						if(tower.bobNum <= -1) {
+							tower.bob = 1;
+						} else if(tower.bobNum >= 1) {
+							tower.bob = 0;
+						}
+						if(tower.bob) {
+							tower.bobNum += 0.02;
+						} else {
+							tower.bobNum -= 0.02;
+						}
+						var y = tower.bobNum + tower.y;
+						if(checkButton(tower.x,y,tower.size,tower.size)) {
 							console.log("Tower clicked!");
 							app.tooltip.target = tower;
 							app.tooltip.active = true;
