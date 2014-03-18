@@ -3,7 +3,7 @@
 * - Build and upgrade defenses
 * TODOs: 
 * - Drag and drop towers.
-* - Tooltip should explain each button on hover
+* - Tooltip should explain each button on hover: display in tooltip.secondTarget right bottom panel
 * - Explain buildable area better
 * - Indicate where enemies are coming from on the map ~5 seconds before they spawn
 * - Fix laser tower doing damage while pause is active (check others)
@@ -734,8 +734,10 @@ var app = {
 					}
 				}
 				if(!tip) {
-					app.tooltip.active = false;
-					app.tooltip.target = 0;
+					if(app.tooltip.target.name) {
+						app.tooltip.active = false;
+						app.tooltip.target = 0;
+					}
 				}
 			}
 		}
