@@ -22,6 +22,7 @@ window.onload = function() {
 	});
 	// Canvas Handlers
 	canvas.addEventListener('click', app.clickHandle);
+	canvas.addEventListener('mousemove', app.moveHandle);
 }
 var app = {
 	width: 640,
@@ -193,50 +194,74 @@ var app = {
 						name: 'basic',
 						x: 120,
 						y: 10,
-						size: 12,
 						boundx: 100,
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
+						size: 12,
+						//Stats
+						ammo: 3,
+						rate: 500,
+						hp: 20,
+						damage: 5,
 						price: 10,
 						range: 60,
-						style: 'rgba(0,132,255,1)'
+						style: 'rgba(0,132,255,1)',
+						image: ''
 					}, {
 						name: 'laser',
 						x: 162,
 						y: 10,
-						size: 12,
 						boundx: 142,
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
+						size: 12,
+						//Stats
+						ammo: 1,
+						rate: 100,
+						hp: 15,
+						damage: 1,
 						price: 20,
 						range: 50,
-						style: "#FF8638"
+						style: "#FF8638",
+						image: ''
 					}, {
 						name: 'shock',
 						x: 204,
 						y: 10,
-						size: 12,
 						boundx: 184,
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
+						size: 12,
+						//Stats
+						ammo: 1,
+						rate: 1000,
+						hp: 25,
+						damage: 2,
 						price: 30,
 						range: 30,
-						style: "#EFC94C"
+						style: "#EFC94C",
+						image: ''
 					}, {
 						name: 'rocket',
 						x: 246,
 						y: 10,
-						size: 12,
 						boundx: 226,
 						boundy: 0,
 						boundw: 40,
 						boundh: 40,
+						size: 12,
+						//Stats
+						ammo: 2,
+						rate: 1500,
+						hp: 30,
+						damage: 8,
 						price: 40,
 						range: 40,
-						style: "#F3210A"
+						style: "#F3210A",
+						image: ''
 					},
 				],
 				draw: function() {
@@ -573,7 +598,7 @@ var app = {
 		// console.log(mousePos);
 		if(app.state.current == 'mainmenu') {
 			var current = app.menus.main.start;
-			if(checkButton(current.x,current.y-current.h,current.w,current.h)) {
+			if(app.checkButton(mousePos,current.x,current.y-current.h,current.w,current.h)) {
 				app.state.current = 'gameplay';
 				app.menus.gameplay.timer.startTime = Date.now();
 			}
@@ -603,7 +628,7 @@ var app = {
 							tower.bobNum -= 0.02;
 						}
 						var y = tower.bobNum + tower.y;
-						if(checkButton(tower.x,y,tower.size,tower.size)) {
+						if(app.checkButton(mousePos,tower.x,y,tower.size,tower.size)) {
 							console.log("Tower clicked!");
 							app.tooltip.target = tower;
 							app.tooltip.active = true;
@@ -617,11 +642,11 @@ var app = {
 					var h = 40;
 					var x = 0;
 					var y = app.height - bottom.height - ticker.height - h - 10;
-					if(checkButton(x,y,w,h)) {
+					if(app.checkButton(mousePos,x,y,w,h)) {
 						// Tooltip clicked
 						tip = true;
 						sell = app.tooltip.buttons.sell.dim();
-						if(checkButton(sell.x,sell.y,sell.w,sell.h)) {
+						if(app.checkButton(mousePos,sell.x,sell.y,sell.w,sell.h)) {
 							if(app.tooltip.target) {
 								app.removeEntity(app.tooltip.target);
 								var value = (app.tooltip.target.value*0.75).toFixed(0);
@@ -638,7 +663,7 @@ var app = {
 					// Clicked on bottom menu
 					y = app.height - bottom.height;
 					w = app.width;
-					if(checkButton(0,y,w,bottom.height)) {
+					if(app.checkButton(mousePos,0,y,w,bottom.height)) {
 						// Bottom menu clicked
 						tip = true;
 						console.log('Bottom menu clicked');
@@ -651,14 +676,14 @@ var app = {
 						// Tower clicked
 						var current = app.menus.gameplay.towers.buttons;
 						for(i=0;i < current.length;i++) {
-							if(checkButton(current[i].boundx,current[i].boundy,current[i].boundw,current[i].boundh)) {
+							if(app.checkButton(mousePos,current[i].boundx,current[i].boundy,current[i].boundw,current[i].boundh)) {
 								// Add Tower
 								app.addTower.init(current[i]);
 							}
 						}
 						// Pause clicked
 						var current = app.menus.pause.button;
-						if(checkButton(current.x,current.y,current.w,current.h)) {
+						if(app.checkButton(mousePos,current.x,current.y,current.w,current.h)) {
 							app.menus.pause.toggle();
 						}
 					}
@@ -668,7 +693,7 @@ var app = {
 			}
 		} else if(app.state.current == 'gameover') {
 			var current = app.menus.main.start;
-			if(checkButton(current.x,current.y-current.h,current.w,current.h)) {
+			if(app.checkButton(mousePos,current.x,current.y-current.h,current.w,current.h)) {
 				// Reset game
 				app.initPlanet();
 				app.enemies = [];
@@ -682,17 +707,50 @@ var app = {
 				app.state.current = 'gameplay';
 			}
 		}
-		function checkButton(x,y,w,h) {
-			var x1 = x;
-			var x2 = x1 + w;
-			var y1 = y;
-			var y2 = y1 + h;
-			if(mousePos.x > x1 && mousePos.x < x2) {
-				if(mousePos.y > y1 && mousePos.y < y2) {
-					return true;
-				} else {
-					return false;
+	},
+	moveHandle: function(e) {
+		// Get mouse position
+		var mousePos = app.getMousePos(canvas, e);
+		mousePos.size = 1;
+		if(app.state.current == 'mainmenu') {
+			//
+		} else if(app.state.current == 'gameplay') {
+			if(!app.menus.pause.active) {
+				// Game is active
+				var tip = false;
+				// Hover top menu
+				if(mousePos.y <= app.menus.gameplay.towers.height) {
+					// Tower clicked
+					var current = app.menus.gameplay.towers.buttons;
+					for(i=0;i < current.length;i++) {
+						if(app.checkButton(mousePos,current[i].boundx,current[i].boundy,current[i].boundw,current[i].boundh)) {
+							// Display tooltip
+							if(app.tooltip.target != current[i]) {
+								app.tooltip.target = current[i];
+								app.tooltip.active = true;
+							}
+							tip = true;
+						}
+					}
 				}
+				if(!tip) {
+					app.tooltip.active = false;
+					app.tooltip.target = 0;
+				}
+			}
+		}
+	},
+	checkButton: function(pos,x,y,w,h) {
+		var mousePos = pos;
+		var x1 = x;
+		var x2 = x1 + w;
+		var y1 = y;
+		var y2 = y1 + h;
+		if(mousePos.x > x1 && mousePos.x < x2) {
+			if(mousePos.y > y1 && mousePos.y < y2) {
+				return true;
+			} else {
+				return false;
 			}
 		}
 	},
@@ -701,11 +759,18 @@ var app = {
 			// "tower" contains button object
 			if(app.player.cash >= tower.price) {
 				app.placeNewTower = true;
+				app.newTower = tower;
 				app.newTower = {
 					'type':tower.name,
-					'price':tower.price,
-					'style':tower.style,
 					'size':tower.size,
+					'style':tower.style,
+					'image':tower.image,
+					//Stats
+					'ammo':tower.ammo,
+					'rate':tower.rate,
+					'hp':tower.hp,
+					'damage':tower.damage,
+					'price':tower.price,
 					'range':tower.range
 				}
 				canvas.addEventListener('mousemove', app.addTower.setNewPos);
@@ -843,10 +908,10 @@ var app = {
 			},
 		},
 		draw: function() {
-			if(app.tooltip.target) {
-				var unit = app.tooltip.target;
-				var bottom = app.menus.gameplay.bottom;
-				var ticker = app.menus.gameplay.ticker;
+			var unit = app.tooltip.target;
+			var bottom = app.menus.gameplay.bottom;
+			var ticker = app.menus.gameplay.ticker;
+			if(app.tooltip.target.alive) {
 				// Show range
 				ctx.strokeStyle = unit.style;
 				var x = unit.x +(unit.size/2);
@@ -929,6 +994,12 @@ var app = {
 					ctx.fillText(str, x+strlen, y);
 					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
 				}
+			} else if(app.tooltip.target.name) {
+				x = 0;
+				y = app.height - bottom.height;
+				str = "Test";
+				ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
+				ctx.fillText(str, x, y);
 			}
 		},
 	},
@@ -979,63 +1050,24 @@ var app = {
 		}
 	},
 	buildTower: function(x, y, tower) {
-		if(tower.type == 'basic') {
-			app.player.cash -= tower.price;
-			var size = 12;
-			var ammo = 3;
-			var rate = 500;
-			var hp = 20;
-			var damage = 5;
-			var style = "rgba(0,132,255,1)";
-			var image;
-		}
-		if(tower.type == 'laser') {
-			app.player.cash -= tower.price;
-			var size = 12;
-			var ammo = 1;
-			var rate = 100;
-			var hp = 15;
-			var damage = 1;
-			var style = "#FF8638";
-			var image;
-		}
-		if(tower.type == 'shock') {
-			app.player.cash -= tower.price;
-			var size = 12;
-			var ammo = 1;
-			var rate = 1000;
-			var hp = 25;
-			var damage = 2;
-			var style = "#EFC94C";
-			var image;
-		}
-		if(tower.type == 'rocket') {
-			app.player.cash -= tower.price;
-			var size = 12;
-			var ammo = 2;
-			var rate = 1500;
-			var hp = 30;
-			var damage = 8;
-			var style = "#F3210A";
-			var image;
-		}
+		app.player.cash -= tower.price;
 		app.towers.push({
 			'x':x,
 			'y':y,
-			'size':size,
+			'size':tower.size,
 			'range':tower.range,
-			'ammo':ammo,
-			'rate':rate,
+			'ammo':tower.ammo,
+			'rate':tower.rate,
 			'delay': false,
 			'target':'',
 			'type':tower.type,
 			'alignment':'player',
-			'hp':hp,
-			'maxhp':hp,
-			'damage':damage,
-			'defaultStyle':style,
-			'style':style,
-			'image':image,
+			'hp':tower.hp,
+			'maxhp':tower.hp,
+			'damage':tower.damage,
+			'defaultStyle':tower.style,
+			'style':tower.style,
+			'image':tower.image,
 			'level':1,
 			'value':tower.price,
 			'alive':true,
