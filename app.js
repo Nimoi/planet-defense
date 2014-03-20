@@ -192,6 +192,7 @@ var app = {
 				height: 40,
 				buttons: [{
 						name: 'basic',
+						description: 'Basic ballistic defense satellite.',
 						x: 120,
 						y: 10,
 						boundx: 100,
@@ -210,6 +211,7 @@ var app = {
 						image: ''
 					}, {
 						name: 'laser',
+						description: 'Defense satellite utilizing a full spectrum directed-energy weapon.',
 						x: 162,
 						y: 10,
 						boundx: 142,
@@ -228,6 +230,7 @@ var app = {
 						image: ''
 					}, {
 						name: 'shock',
+						description: 'EMP satellite pulses a disabling field.',
 						x: 204,
 						y: 10,
 						boundx: 184,
@@ -246,6 +249,7 @@ var app = {
 						image: ''
 					}, {
 						name: 'rocket',
+						description: 'Satellite launches mid-range missiles.',
 						x: 246,
 						y: 10,
 						boundx: 226,
@@ -549,9 +553,7 @@ var app = {
 				app.menus.gameplay.ticker.draw();
 				app.menus.gameplay.bottom.draw();
 				// Display tooltip
-				if(app.tooltip.active) {
-					app.tooltip.draw(); 
-				}
+				app.tooltip.draw();
 			}
 			if(app.planet.hp <= 0) {
 				app.menus.gameOver.activate();
@@ -704,6 +706,8 @@ var app = {
 				app.wave.reset();
 				app.menus.gameOver.active = false;
 				app.menus.gameplay.timer.startTime = Date.now();
+				app.tooltip.active = 0;
+				app.tooltip.target = 0;
 				app.state.current = 'gameplay';
 			}
 		}
@@ -725,18 +729,16 @@ var app = {
 					for(i=0;i < current.length;i++) {
 						if(app.checkButton(mousePos,current[i].boundx,current[i].boundy,current[i].boundw,current[i].boundh)) {
 							// Display tooltip
-							if(app.tooltip.target != current[i]) {
-								app.tooltip.target = current[i];
-								app.tooltip.active = true;
+							if(app.tooltip.target2 != current[i]) {
+								app.tooltip.target2 = current[i];
 							}
 							tip = true;
 						}
 					}
 				}
 				if(!tip) {
-					if(app.tooltip.target.name) {
-						app.tooltip.active = false;
-						app.tooltip.target = 0;
+					if(app.tooltip.target2) {
+						app.tooltip.target2 = 0;
 					}
 				}
 			}
@@ -845,6 +847,7 @@ var app = {
 	tooltip: {
 		active: false,
 		target: 0,
+		target2: 0,
 		buttons: {
 			sell: {
 				dim: function() {
@@ -913,95 +916,113 @@ var app = {
 			var unit = app.tooltip.target;
 			var bottom = app.menus.gameplay.bottom;
 			var ticker = app.menus.gameplay.ticker;
-			if(app.tooltip.target.alive) {
-				// Show range
-				ctx.strokeStyle = unit.style;
-				var x = unit.x +(unit.size/2);
-				var y = unit.y +(unit.size/2);
-				ctx.beginPath();
-				ctx.arc(x, y, unit.range, 0, Math.PI * 2, true);
-				ctx.closePath();
-				ctx.stroke();
-				// UPGRADE/SELL
-				app.tooltip.buttons.sell.draw(unit);
-				app.tooltip.buttons.upgrade.draw(unit);
-				// Panel BG
-				var w = 200;
-				var h = 40;
-				x = 0;
-				y = app.height - bottom.height - ticker.height - h - 10;
-				ctx.strokeStyle = "rgba(255,255,255,0.4)";
-				ctx.lineWidth = 0.5;
-				ctx.strokeRect(x, y, w, h);
-				ctx.fillStyle = "rgba(0,0,0,0.4)";
-				ctx.fillRect(x, y, w, h);
-				ctx.lineWidth = 1;
-				// Bottom
-				y = app.height - bottom.height;
-				// Stats
-				ctx.font = "14px Helvetica";
-				ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-				var str = unit.type+" "+unit.level;
-				x += 10;
-				y += 20;
-				ctx.fillText(str.toUpperCase(), x, y);
-				ctx.font = "11px Helvetica";
-				// Damage
-				y += 20;
-				str = "Damage: "+unit.damage;
-				ctx.fillText(str, x, y);
-				// Range
-				y += 20;
-				str = "Range: "+unit.range;
-				ctx.fillText(str, x, y);
-				// Attack Rate
-				y += 20;
-				str = "Fire Rate: "+(unit.rate/100).toFixed(1);
-				ctx.fillText(str, x, y);
-				// Upgrades
-				if(unit.level < 5) {
-					var upgrades = app.level.next(unit);
+			if(app.tooltip.active) {
+				if(app.tooltip.target.alive) {
+					// Show range
+					ctx.strokeStyle = unit.style;
+					var x = unit.x +(unit.size/2);
+					var y = unit.y +(unit.size/2);
+					ctx.beginPath();
+					ctx.arc(x, y, unit.range, 0, Math.PI * 2, true);
+					ctx.closePath();
+					ctx.stroke();
+					// UPGRADE/SELL
+					app.tooltip.buttons.sell.draw(unit);
+					app.tooltip.buttons.upgrade.draw(unit);
+					// Panel BG
+					var w = 200;
+					var h = 40;
+					x = 0;
+					y = app.height - bottom.height - ticker.height - h - 10;
+					ctx.strokeStyle = "rgba(255,255,255,0.4)";
+					ctx.lineWidth = 0.5;
+					ctx.strokeRect(x, y, w, h);
+					ctx.fillStyle = "rgba(0,0,0,0.4)";
+					ctx.fillRect(x, y, w, h);
+					ctx.lineWidth = 1;
+					// Bottom
+					y = app.height - bottom.height;
+					// Stats
 					ctx.font = "14px Helvetica";
 					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-					x = 120;
-					y = app.height - bottom.height + 20;
-					str = "Level "+upgrades.level;
+					var str = unit.type+" "+unit.level;
+					x += 10;
+					y += 20;
 					ctx.fillText(str.toUpperCase(), x, y);
 					ctx.font = "11px Helvetica";
 					// Damage
 					y += 20;
-					str = "Damage: ";
+					str = "Damage: "+unit.damage;
 					ctx.fillText(str, x, y);
-					var strlen = ctx.measureText(str).width;
-					str = unit.damage + upgrades.damage;
-					ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
-					ctx.fillText(str, x+strlen, y);
-					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
 					// Range
 					y += 20;
-					str = "Range: ";
+					str = "Range: "+unit.range;
 					ctx.fillText(str, x, y);
-					var strlen = ctx.measureText(str).width;
-					str = unit.range + upgrades.range;
-					ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
-					ctx.fillText(str, x+strlen, y);
-					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
 					// Attack Rate
 					y += 20;
-					str = "Fire Rate: ";
+					str = "Fire Rate: "+(unit.rate/100).toFixed(1);
 					ctx.fillText(str, x, y);
-					var strlen = ctx.measureText(str).width;
-					str = ((unit.rate-upgrades.rate)/100).toFixed(1);
-					ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
-					ctx.fillText(str, x+strlen, y);
-					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+					// Upgrades
+					if(unit.level < 5) {
+						var upgrades = app.level.next(unit);
+						ctx.font = "14px Helvetica";
+						ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+						x = 120;
+						y = app.height - bottom.height + 20;
+						str = "Level "+upgrades.level;
+						ctx.fillText(str.toUpperCase(), x, y);
+						ctx.font = "11px Helvetica";
+						// Damage
+						y += 20;
+						str = "Damage: ";
+						ctx.fillText(str, x, y);
+						var strlen = ctx.measureText(str).width;
+						str = unit.damage + upgrades.damage;
+						ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
+						ctx.fillText(str, x+strlen, y);
+						ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+						// Range
+						y += 20;
+						str = "Range: ";
+						ctx.fillText(str, x, y);
+						var strlen = ctx.measureText(str).width;
+						str = unit.range + upgrades.range;
+						ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
+						ctx.fillText(str, x+strlen, y);
+						ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+						// Attack Rate
+						y += 20;
+						str = "Fire Rate: ";
+						ctx.fillText(str, x, y);
+						var strlen = ctx.measureText(str).width;
+						str = ((unit.rate-upgrades.rate)/100).toFixed(1);
+						ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
+						ctx.fillText(str, x+strlen, y);
+						ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+					}
 				}
-			} else if(app.tooltip.target.name) {
-				x = 0;
-				y = app.height - bottom.height;
-				str = "Test";
-				ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
+			}
+			if(app.tooltip.target2) {
+				var target = app.tooltip.target2;
+				var maxWidth = app.width/2 - 40;
+				var lineHeight = 16;
+				x = app.width/2 + 10;
+				y = app.height - bottom.height + 16;
+				// Name
+				ctx.font = "12px Helvetica";
+				str = target.name;
+				str += ' Satellite';
+				ctx.fillStyle = "rgba(255, 255, 255, 1)";
+				ctx.fillText(str.toUpperCase(), x, y);
+				// Stats
+				y += 20;
+				str = 'Damage: '+target.damage+'  Range: '+target.range+'  Rate: '+target.rate/100;
 				ctx.fillText(str, x, y);
+				// Description
+				y += 20;
+				str = target.description;
+				ctx.fillStyle = "rgba(255, 255, 255, 1)";
+				app.wrapText(ctx, str, x, y, maxWidth, lineHeight);
 			}
 		},
 	},
@@ -1296,14 +1317,14 @@ var app = {
 			ctx.moveTo(ax, ay);
 			ay += 14;
 			ctx.lineTo(ax, ay);
-			ctx.strokeStyle = tower.style;
+			ctx.strokeStyle = app.planet.defaultStyle;
 			ctx.stroke();
 			ctx.closePath();
-			ctx.fillStyle = tower.style;
+			ctx.strokeStyle = app.planet.defaultStyle;
 			ctx.beginPath();
 			ctx.arc(ax, ay, 2, 0, Math.PI * 2, true);
 			ctx.closePath();
-			ctx.fill();
+			ctx.stroke();
 			// Tower
 			if(tower.target) {
 				ctx.save();
@@ -1928,4 +1949,23 @@ var app = {
 	randColor: function() {
 		return '#'+ ('000000' + Math.floor(Math.random()*16777215).toString(16)).slice(-6);
 	},
+	wrapText: function(context, text, x, y, maxWidth, lineHeight) {
+		var words = text.split(' ');
+		var line = '';
+
+		for(var n = 0; n < words.length; n++) {
+		  var testLine = line + words[n] + ' ';
+		  var metrics = context.measureText(testLine);
+		  var testWidth = metrics.width;
+		  if (testWidth > maxWidth && n > 0) {
+		    context.fillText(line, x, y);
+		    line = words[n] + ' ';
+		    y += lineHeight;
+		  }
+		  else {
+		    line = testLine;
+		  }
+		}
+		context.fillText(line, x, y);
+	}
 }
