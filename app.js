@@ -3,13 +3,12 @@
 * - Build and upgrade defenses
 * TODOs: 
 * - Drag and drop towers.
-* - Tooltip should explain each button on hover: display in tooltip.secondTarget right bottom panel
 * - Explain buildable area better
 * - Indicate where enemies are coming from on the map ~5 seconds before they spawn
-* - Fix laser tower doing damage while pause is active (check others)
-* - Shock tower needs to check if entities exist before trying to change properties (rocket too?)
 * - Ensure projectiles don't overshoot their targets
 * - Planet should crack to display damage
+* - Tower upgrades (only increasing stats for now)
+* - New enemy wave types, increasing wave difficulty
 */
 var canvas;
 window.onload = function() {
@@ -598,6 +597,7 @@ var app = {
 		var mousePos = app.getMousePos(canvas, e);
 		mousePos.size = 1;
 		// console.log(mousePos);
+		console.log(e);
 		if(app.state.current == 'mainmenu') {
 			var current = app.menus.main.start;
 			if(app.checkButton(mousePos,current.x,current.y-current.h,current.w,current.h)) {
@@ -611,7 +611,9 @@ var app = {
 					if(mousePos.y > app.menus.gameplay.towers.height) {
 						if(!app.addTower.checkNewCollide()) {
 							app.buildTower(app.newTower.x, app.newTower.y, app.newTower);
-							app.placeNewTower = false;
+							if(!e.shiftKey || app.player.cash < app.newTower.price) {
+								app.placeNewTower = false;
+							}
 						}
 					}
 				} else {
@@ -960,7 +962,7 @@ var app = {
 					ctx.fillText(str, x, y);
 					// Attack Rate
 					y += 20;
-					str = "Fire Rate: "+(unit.rate/100).toFixed(1);
+					str = "Rate: "+(unit.rate/100).toFixed(1);
 					ctx.fillText(str, x, y);
 					// Upgrades
 					if(unit.level < 5) {
@@ -992,7 +994,7 @@ var app = {
 						ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
 						// Attack Rate
 						y += 20;
-						str = "Fire Rate: ";
+						str = "Rate: ";
 						ctx.fillText(str, x, y);
 						var strlen = ctx.measureText(str).width;
 						str = ((unit.rate-upgrades.rate)/100).toFixed(1);
@@ -1660,7 +1662,9 @@ var app = {
 					if(unit.target) {
 						if(current.delay) {
 				    		// Remove health
-					    	app.damageEntity(unit.target, unit.damage);
+				    		if(!app.menus.pause.active) {
+						    	app.damageEntity(unit.target, unit.damage);
+				    		}
 					    	// Remove entity
 					    	// if(unit.target.hp <= 0) {
 					    	// 	clearInterval(current.damageInterval);
@@ -1705,8 +1709,10 @@ var app = {
 			    		// TODO: Fix shock towers may be attempting to slow enemies that aren't alive
 			    		for(i=0;i<app.enemies.length;i++) {
 			    			if(app.inRange(unit,app.enemies[i])) {
-			    				app.damageEntity(app.enemies[i],unit.damage);
-						    	app.enemies[i].speed = 1;
+			    				if(app.enemies[i].alive) {
+				    				app.damageEntity(app.enemies[i],unit.damage);
+							    	app.enemies[i].speed = 1;
+			    				}
 			    			}
 			    		}
 					} else {
