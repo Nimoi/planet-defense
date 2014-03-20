@@ -2,13 +2,16 @@
 * - Defend your planets against attackers
 * - Build and upgrade defenses
 * TODOs: 
-* - Drag and drop towers.
-* - Explain buildable area better
 * - Indicate where enemies are coming from on the map ~5 seconds before they spawn
-* - Ensure projectiles don't overshoot their targets
-* - Planet should crack to display damage
+* - Include a cancel button when placing a tower
 * - Tower upgrades (only increasing stats for now)
 * - New enemy wave types, increasing wave difficulty
+* - Planet should crack to display damage
+* - Towers should float away when the planet is destroyed
+* - Target-less bullets should impact enemies they pass through
+* - Drag and drop towers.
+* - Explain buildable area better
+* - Ensure projectiles don't overshoot their targets
 */
 var canvas;
 window.onload = function() {
@@ -363,10 +366,11 @@ var app = {
 					ctx.fillRect(x, y, w, h);
 					// Health
 					if(app.planet.hp > 0) {
+						hpw = (app.planet.hp * w)/100;
 						y += 1;
 						h -= 2;
 						ctx.fillStyle = "rgba(149, 209, 39, 0.9)";
-						ctx.fillRect(x, y, app.planet.hp, h);
+						ctx.fillRect(x, y, hpw, h);
 					}
 				},
 			},
@@ -597,7 +601,6 @@ var app = {
 		var mousePos = app.getMousePos(canvas, e);
 		mousePos.size = 1;
 		// console.log(mousePos);
-		console.log(e);
 		if(app.state.current == 'mainmenu') {
 			var current = app.menus.main.start;
 			if(app.checkButton(mousePos,current.x,current.y-current.h,current.w,current.h)) {
@@ -1018,7 +1021,11 @@ var app = {
 				ctx.fillText(str.toUpperCase(), x, y);
 				// Stats
 				y += 20;
-				str = 'Damage: '+target.damage+'  Range: '+target.range+'  Rate: '+target.rate/100;
+				var rate = (target.rate/100).toFixed(1);
+				str = 'Damage: '+target.damage+'  Range: '+target.range+'  Rate: '+rate;
+				if(app.mode == 'hard') {
+					str += '  HP: '+target.hp;
+				}
 				ctx.fillText(str, x, y);
 				// Description
 				y += 20;
@@ -1126,10 +1133,11 @@ var app = {
 			'formation':1,
 		}],
 		// waves: [[0,1],[0,1],[0,1],[0,1],[0,1],[1,1],[0,1],[2,1],[1,2],[0,2],[0,3]],
-		// [type, num, delay]
+		// [type, num, delay, sector]
 		waves: [
-			[[0,1,5],[1,1,3],[2,1,5],[3,1,1]],
-			[[0,1,10],[1,1,5],[2,1,10],[3,1,3]],
+			[[0,1,5,1],[1,1,3,2],[2,1,5,3],[3,1,1,4]],
+			[[0,1,10,5],[1,1,5,6],[2,1,10,7],[3,1,3,8]],
+			[[0,1,10,9],[1,1,5,5],[2,1,10,7],[3,1,3,9]],
 		],
 		queue: [],
 		check: function() {
@@ -1171,11 +1179,11 @@ var app = {
 		spawn: function() {
 			console.log("SPAWNING!");
 			w = app.wave;
-			// Type
 			typeNum = w.queue[w.qNum][w.qi][0];
-			num = w.queue[w.qNum][w.qi][2];
-			wt = w.types[typeNum];
-			app.spawnEnemies(wt.type,wt.formation,num);
+			num = w.queue[w.qNum][w.qi][2]; // Number of enemies
+			sector = w.queue[w.qNum][w.qi][3]; // Sector
+			wt = w.types[typeNum]; // Type
+			app.spawnEnemies(wt.type,wt.formation,num,sector);
 			--w.queue[w.qNum][w.qi][1];
 			if(w.queue[w.qNum][w.qi][1] <= 0) {
 				w.qi++;
@@ -1217,7 +1225,7 @@ var app = {
 		},
 	},
 	// Generate enemies
-	spawnEnemies: function(type, formation, num) {
+	spawnEnemies: function(type, formation, num, sector) {
 		// Default stats
 		var size = 10;
 		var range = 20;
@@ -1246,18 +1254,59 @@ var app = {
 			maxhp = 25;
 			speed = 0.5;
 		}
-		var y = ~~((Math.random()*(app.height-40))+40);
-		var x = app.width+(Math.random()*60)-10;
+		// Sectors
+		console.log(sector);
+		var x,y;
+		var distance = Math.random()*60;
+		if(sector == 1) { // Right
+			y = ~~((Math.random()*(app.height/3-40))+40);
+			x = app.width+(distance)-10;
+		} else if(sector == 2) {
+			y = ~~((Math.random()*(app.height/3-40))+40+app.height/3);
+			x = app.width+(distance)-10;
+		} else if(sector == 3) {
+			y = ~~((Math.random()*(app.height/3-40))+40+(app.height/3)*2);
+			x = app.width+(distance)-10;
+		} else if(sector == 4) { // Bottom
+			y = app.height+(distance)-10;
+			x = ~~((Math.random()*(app.width/3))+(app.width/3)*2);
+		} else if(sector == 5) {
+			y = app.height+(distance)-10;
+			x = ~~((Math.random()*(app.width/3))+(app.width/3));
+		} else if(sector == 6) {
+			y = app.height+(distance)-10;
+			x = ~~((Math.random()*app.width/3));
+		} else if(sector == 7) { // Left
+			y = ~~((Math.random()*(app.height/3-40))+40);
+			x = -(distance)-10;
+		} else if(sector == 8) {
+			y = ~~((Math.random()*(app.height/3-40))+40+app.height/3);
+			x = -(distance)-10;
+		} else if(sector == 9) {
+			y = ~~((Math.random()*(app.height/3-40))+40+(app.height/3)*2);
+			x = -(distance)-10;
+		}
 		var offset;
 		if(formation == 1) {
-			offset = [{
-				x: size + 10,
-			}];
+			if(sector == 1 || sector == 2 || sector == 3) {
+				offset = [{
+					x: size + 10,
+				}];
+			} else if(sector == 4 || sector == 5 || sector == 6) {
+				offset = [{
+					y: size + 10,
+				}];
+			} else if(sector == 7 || sector == 8 || sector == 9) {
+				offset = [{
+					x: -(size) - 10,
+				}];
+			}
 		}
+		console.log(-(size) - 10);
+		console.log("x: "+x+" y: "+y);
 		for(i=0; i < num; i++) {
-			// stats.x = x;
-			// stats.y = y;
 			var stats = {
+				'sector':sector,
 				'x':x,
 				'y':y,
 				'size':size,
@@ -1278,7 +1327,12 @@ var app = {
 				'value':value
 			}
 			app.enemies.push(stats);
-			x += offset[0].x;
+			if(offset[0].x) {
+				x += offset[0].x;
+			}
+			if(offset[0].y) {
+				y += offset[0].y;
+			}
 		}
 	},
 	updateTowers: function() {
