@@ -1177,7 +1177,6 @@ var app = {
 			// }
 		},
 		spawn: function() {
-			console.log("SPAWNING!");
 			w = app.wave;
 			typeNum = w.queue[w.qNum][w.qi][0];
 			num = w.queue[w.qNum][w.qi][2]; // Number of enemies
@@ -1255,7 +1254,7 @@ var app = {
 			speed = 0.5;
 		}
 		// Sectors
-		console.log(sector);
+		console.log("Spawning enemies in sector: "+sector);
 		var x,y;
 		var distance = Math.random()*60;
 		if(sector == 1) { // Right
@@ -1302,8 +1301,6 @@ var app = {
 				}];
 			}
 		}
-		console.log(-(size) - 10);
-		console.log("x: "+x+" y: "+y);
 		for(i=0; i < num; i++) {
 			var stats = {
 				'sector':sector,
