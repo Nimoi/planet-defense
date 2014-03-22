@@ -1066,7 +1066,7 @@ var app = {
 				var ammo = 1;
 				var rate = 100;
 				var hp = 10;
-				var damage = 3;
+				var damage = 6;
 				var image;
 			}
 			upgrades = {
@@ -1133,12 +1133,13 @@ var app = {
 			'type':'boss',
 			'formation':1,
 		}],
-		// waves: [[0,1],[0,1],[0,1],[0,1],[0,1],[1,1],[0,1],[2,1],[1,2],[0,2],[0,3]],
 		// [type, num, delay, sector]
 		waves: [
-			[[0,1,5,1],[1,1,3,2],[2,1,5,3],[3,1,1,4]],
-			[[0,1,10,5],[1,1,5,6],[2,1,10,7],[3,1,3,8]],
-			[[0,1,10,9],[1,1,5,5],[2,1,10,7],[3,1,3,9]],
+			[[0,3,10,1],[0,5,5,1],[1,1,5,1],[0,5,5,1],[1,2,1,1]],
+			[[0,20,15,1],[2,5,15,1],[2,5,0,1],[3,3,10,1],[2,8,5,1],[2,8,0,1]],
+			[[3,1,15,1],[3,1,0,1],[3,1,0,1],[3,1,0,1],[3,1,0,1]],
+			[[3,1,15,1],[3,1,0,1],[3,1,0,1],[3,1,0,1],[3,1,0,1]],
+			[[3,1,0,1],[3,1,0,1],[3,1,0,1],[3,1,0,1],[3,1,0,1]],
 		],
 		queue: [],
 		check: function() {
@@ -1163,11 +1164,13 @@ var app = {
 					w.elapsed = Date.now() - w.start - app.menus.pause.elapsedTime;
 					// console.log((w.elapsed/1000).toFixed(0));
 					// console.log((w.queue[w.qNum][w.qi][2]));
-					if((w.elapsed/1000).toFixed(0) <= w.queue[w.qNum][w.qi][2]) {
+					var delay = w.queue[w.qNum][w.qi][2];
+					if((w.elapsed/1000).toFixed(0) <= delay 
+						&& (w.elapsed/1000).toFixed(0) >= delay - 10) {
 						// Alert
 						w.alert(w.queue[w.qNum][w.qi][3]);
 					}
-					if((w.elapsed/1000).toFixed(0) >= w.queue[w.qNum][w.qi][2]) {
+					if((w.elapsed/1000).toFixed(0) >= delay) {
 						// Spawn next queued item
 						w.ready = true;
 					}
@@ -1177,16 +1180,16 @@ var app = {
 		spawn: function() {
 			w = app.wave;
 			typeNum = w.queue[w.qNum][w.qi][0];
-			num = w.queue[w.qNum][w.qi][2]; // Number of enemies
+			num = w.queue[w.qNum][w.qi][1]; // Number of enemies
 			sector = w.queue[w.qNum][w.qi][3]; // Sector
-			wt = w.types[typeNum]; // Type
-			app.spawnEnemies(wt.type,wt.formation,num,sector);
-			--w.queue[w.qNum][w.qi][1];
-			if(w.queue[w.qNum][w.qi][1] <= 0) {
+			type = w.types[typeNum]; // Type
+			app.spawnEnemies(type.type,type.formation,num,sector);
+			// --w.queue[w.qNum][w.qi][1];
+			// if(w.queue[w.qNum][w.qi][1] <= 0) {
 				w.qi++;
 				// w.ready = false;
 				w.qStart = 0;
-			}
+			// }
 			if(w.qi >= w.queue[w.qNum].length) {
 				// Reset queue item
 				w.qi = 0;
@@ -1207,7 +1210,10 @@ var app = {
 				// Increase wave stats based on wave level
 			}
 		},
+		alertGlow: 1,
+		alertGlowD: 0,
 		alert: function(sector) {
+			var w = app.wave;
 			var bottom = app.menus.gameplay.bottom;
 			var x,y;
 			var bottomEdge = app.height - 40 - bottom.height;
@@ -1241,10 +1247,13 @@ var app = {
 			}
 			// ctx.fillStyle = "rgba(185,18,27,1)";
 			// ctx.fillRect(x, y, 10, 10);
+			var style = "rgba(185,18,27,1)";
+			ctx.shadowColor = "#FF3125";
+			ctx.shadowBlur = w.alertGlow;
 			str = "!";
 			ctx.font = "bold 20px Helvetica";
-			ctx.fillStyle = "rgba(185,18,27,1)";
-			ctx.strokeStyle = "rgba(185,18,27,1)";
+			ctx.fillStyle = style;
+			ctx.strokeStyle = style;
 			ctx.fillText(str, x, y);
 			x -= 7;
 			y += 2;
@@ -1258,6 +1267,20 @@ var app = {
 			ctx.lineTo(x,y);
 			ctx.closePath();
 			ctx.stroke();
+			// Update glow
+			if(w.alertGlowD == 0) {
+				w.alertGlow -= 0.5;
+			} else {
+				w.alertGlow += 0.5;
+			}
+			if(w.alertGlow > 8) {
+				w.alertGlowD = 0;
+			}
+			if(w.alertGlow <= 1) {
+				w.alertGlowD = 1;
+			}
+			// console.log(w.alertGlow);
+			ctx.shadowBlur = 0;
 		},
 		reset: function() {
 			var w = app.wave;
@@ -1371,7 +1394,8 @@ var app = {
 				'defaultStyle':"red",
 				'style':"red",
 				'alive':true,
-				'value':value
+				'value':value,
+				'slowed':false
 			}
 			app.enemies.push(stats);
 			if(offset[0].x) {
@@ -1811,8 +1835,13 @@ var app = {
 			    		for(i=0;i<app.enemies.length;i++) {
 			    			if(app.inRange(unit,app.enemies[i])) {
 			    				if(app.enemies[i].alive) {
+			    					if(!app.enemies[i].slowed) {
+								    	app.enemies[i].speed = app.enemies[i].speed*0.75;
+								    	if(app.enemies[i].speed < 0.5) {
+								    		app.enemies[i].slowed = true;
+								    	}
+			    					}
 				    				app.damageEntity(app.enemies[i],unit.damage);
-							    	app.enemies[i].speed = 1;
 			    				}
 			    			}
 			    		}
