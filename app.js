@@ -6,6 +6,7 @@
 * - Include a cancel button when placing a tower
 * - Tower upgrades (only increasing stats for now)
 * - New enemy wave types, increasing wave difficulty
+* - Increase wave stats based on wave level
 * - Planet should crack to display damage
 * - Towers should float away when the planet is destroyed
 * - Target-less bullets should impact enemies they pass through
@@ -1162,19 +1163,16 @@ var app = {
 					w.elapsed = Date.now() - w.start - app.menus.pause.elapsedTime;
 					// console.log((w.elapsed/1000).toFixed(0));
 					// console.log((w.queue[w.qNum][w.qi][2]));
+					if((w.elapsed/1000).toFixed(0) <= w.queue[w.qNum][w.qi][2]) {
+						// Alert
+						w.alert(w.queue[w.qNum][w.qi][3]);
+					}
 					if((w.elapsed/1000).toFixed(0) >= w.queue[w.qNum][w.qi][2]) {
 						// Spawn next queued item
 						w.ready = true;
 					}
 				}
 			}
-			// // At least 5s between spawn waves
-			// function cooldown() {
-			// 	app.wave.active = false;
-			// 	window.setTimeout(function() {
-			// 	    app.wave.active = true;
-			// 	}, 5000);
-			// }
 		},
 		spawn: function() {
 			w = app.wave;
@@ -1208,6 +1206,58 @@ var app = {
 				// TODO
 				// Increase wave stats based on wave level
 			}
+		},
+		alert: function(sector) {
+			var bottom = app.menus.gameplay.bottom;
+			var x,y;
+			var bottomEdge = app.height - 40 - bottom.height;
+			if(sector == 1) {
+				x = app.width - 20;
+				y = (app.height/3)/2+20;
+			} else if(sector == 2) {
+				x = app.width - 20;
+				y = app.height/2-40;
+			} else if(sector == 3) {
+				x = app.width - 20;
+				y = app.height - bottom.height - 40;
+			} else if(sector == 4) {
+				x = (app.width/3)/2+(app.width/3)*2;
+				y = bottomEdge;
+			} else if(sector == 5) {
+				x = app.width/2;
+				y = bottomEdge;
+			} else if(sector == 6) {
+				x = (app.width/3)/2;
+				y = bottomEdge;
+			} else if(sector == 7) {
+				x = 20;
+				y = bottomEdge;
+			} else if(sector == 8) {
+				x = 20;
+				y = app.height/2-40;
+			} else if(sector == 9) {
+				x = 20;
+				y = (app.height/3)/2+20;
+			}
+			// ctx.fillStyle = "rgba(185,18,27,1)";
+			// ctx.fillRect(x, y, 10, 10);
+			str = "!";
+			ctx.font = "bold 20px Helvetica";
+			ctx.fillStyle = "rgba(185,18,27,1)";
+			ctx.strokeStyle = "rgba(185,18,27,1)";
+			ctx.fillText(str, x, y);
+			x -= 7;
+			y += 2;
+			var y2 = y - 24;
+			var x2 = x + 24;
+			var x3 = x + 24/2;
+			ctx.beginPath();
+			ctx.moveTo(x,y);
+			ctx.lineTo(x2,y);
+			ctx.lineTo(x3,y2);
+			ctx.lineTo(x,y);
+			ctx.closePath();
+			ctx.stroke();
 		},
 		reset: function() {
 			var w = app.wave;
@@ -1276,13 +1326,13 @@ var app = {
 			y = app.height+(distance)-10;
 			x = ~~((Math.random()*app.width/3));
 		} else if(sector == 7) { // Left
-			y = ~~((Math.random()*(app.height/3-40))+40);
+			y = ~~((Math.random()*(app.height/3-40))+40+(app.height/3)*2);
 			x = -(distance)-10;
 		} else if(sector == 8) {
 			y = ~~((Math.random()*(app.height/3-40))+40+app.height/3);
 			x = -(distance)-10;
 		} else if(sector == 9) {
-			y = ~~((Math.random()*(app.height/3-40))+40+(app.height/3)*2);
+			y = ~~((Math.random()*(app.height/3-40))+40);
 			x = -(distance)-10;
 		}
 		var offset;
