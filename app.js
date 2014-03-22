@@ -655,18 +655,28 @@ var app = {
 						tip = true;
 						sell = app.tooltip.buttons.sell.dim();
 						if(app.checkButton(mousePos,sell.x,sell.y,sell.w,sell.h)) {
+							// Sell
 							if(app.tooltip.target) {
 								app.removeEntity(app.tooltip.target);
 								var value = (app.tooltip.target.value*0.75).toFixed(0);
-								console.log('Before: '+app.player.cash);
-								console.log("Adding: "+value);
 								app.player.updateCash(value);
-								console.log("After: "+app.player.cash);
 								app.tooltip.target = 0;
 							}
 							tip = false;
 						}
-						console.log('Tooltip clicked');
+						upgrade = app.tooltip.buttons.upgrade.dim();
+						if(app.checkButton(mousePos,upgrade.x,upgrade.y,upgrade.w,upgrade.h)) {
+							// Upgrade
+							if(app.tooltip.target) {
+								if(app.tooltip.target.level < 5) {
+									var price = app.tooltip.target.value*1.75;
+									if(app.player.cash >= price) {
+										app.level.upgrade(app.tooltip.target);
+										app.player.updateCash(-price);
+									}
+								}
+							}
+						}
 					}
 					// Clicked on bottom menu
 					y = app.height - bottom.height;
@@ -909,8 +919,12 @@ var app = {
 					ctx.fillStyle = "rgba(255,255,255,0.1)";
 					ctx.fillRect(dim.x, dim.y, dim.w, dim.h);
 					// STR
-					var price = unit.value*1.75;
-					var str = "Upgrade $"+price.toFixed(0);
+					if(unit.level < 5) {
+						var price = unit.value*1.75;
+						var str = "Upgrade $"+price.toFixed(0);
+					} else {
+						var str = "MAXED";
+					}
 					var x = dim.x+dim.w/2-ctx.measureText(str).width/2;
 					ctx.font = "bold 12px Helvetica";
 					ctx.fillStyle = "rgba(255,255,255,1)";
@@ -1038,10 +1052,11 @@ var app = {
 	},
 	level : {
 		next: function(tower) {
+			// console.log(tower);
 			var level = tower.level + 1;
 			var price = level*tower.value;
 			if(tower.type == 'basic') {
-				var range = 10;
+				var range = 6;
 				var ammo = 1;
 				var rate = 100;
 				var hp = 10;
@@ -1055,14 +1070,14 @@ var app = {
 				var damage = 2;
 				var image;
 			} else if(tower.type == 'shock') {
-				var range = 10;
+				var range = 4;
 				var ammo = 0;
 				var rate = 100;
 				var hp = 10;
-				var damage = 2;
+				var damage = 1;
 				var image;
 			} else if(tower.type == 'rocket') {
-				var range = 10;
+				var range = 5;
 				var ammo = 1;
 				var rate = 100;
 				var hp = 10;
@@ -1080,7 +1095,29 @@ var app = {
 				'price':price
 			};
 			return upgrades;
-		}
+		},
+		upgrade: function(tower) {
+			var l = app.level;
+			var s = l.next(tower);
+			if(s.range) {
+				tower.range += s.range;
+			}
+			if(s.ammo) {
+				tower.ammo += s.ammo;
+			}
+			if(s.rate) {
+				tower.rate -= s.rate;
+			}
+			if(s.maxhp) {
+				tower.maxhp += s.maxhp;
+				tower.hp += s.maxhp;
+			}
+			if(s.damage) {
+				tower.damage += s.damage;	
+			}
+			tower.level = s.level;
+			tower.value = s.price;
+		},
 	},
 	buildTower: function(x, y, tower) {
 		app.player.cash -= tower.price;
@@ -1648,9 +1685,9 @@ var app = {
 		    } else if(prj.owner.type == 'shock') {
 		    	var x = prj.owner.x + (prj.owner.size/2);
 		    	var y = prj.owner.y + (prj.owner.size/2);
-		    	prj.size -= 3;
+		    	prj.size = prj.size*0.8;
 		    	if(prj.owner.shockStyle == "rgba(69,178,157,0)") {
-		    		prj.size = prj.maxSize;
+		    		prj.size = prj.owner.range;
 		    	}
 		    	// Draw prj
 			    ctx.fillStyle = prj.owner.shockStyle;
