@@ -214,7 +214,7 @@ var app = {
 						image: ''
 					}, {
 						name: 'laser',
-						description: 'Defense satellite utilizing a full spectrum directed-energy weapon.',
+						description: 'Defense satellite utilizing a directed-energy weapon.',
 						x: 162,
 						y: 10,
 						boundx: 142,
@@ -1056,32 +1056,32 @@ var app = {
 			var level = tower.level + 1;
 			var price = level*tower.value;
 			if(tower.type == 'basic') {
-				var range = 6;
-				var ammo = 1;
+				var range = ~~(tower.range*0.2);
+				var ammo = 2;
 				var rate = 100;
-				var hp = 10;
-				var damage = 2;
+				var hp = tower.hp;
+				var damage = ~~(tower.damage*1.25);
 				var image;
 			} else if(tower.type == 'laser') {
-				var range = 7;
+				var range = ~~(tower.range*0.2);
 				var ammo = 0;
 				var rate = 0;
-				var hp = 10;
-				var damage = 2;
+				var hp = tower.hp;
+				var damage = ~~(tower.damage*1.3);
 				var image;
 			} else if(tower.type == 'shock') {
-				var range = 4;
+				var range = ~~(tower.range*0.2);
 				var ammo = 0;
 				var rate = 100;
-				var hp = 10;
-				var damage = 1;
+				var hp = tower.hp;
+				var damage = tower.damage;
 				var image;
 			} else if(tower.type == 'rocket') {
-				var range = 5;
+				var range = ~~(tower.range*0.2);
 				var ammo = 1;
 				var rate = 100;
-				var hp = 10;
-				var damage = 6;
+				var hp = tower.hp;
+				var damage = ~~(tower.damage*1.5);
 				var image;
 			}
 			upgrades = {
@@ -1363,6 +1363,17 @@ var app = {
 			maxhp = 25;
 			speed = 0.5;
 		}
+		var level = app.wave.level;
+		for(i=0;i<level;i++) {
+			rate = rate * 0.8;
+			damage = damage * 1.2;
+			maxhp = maxhp * 2;
+			value = value * 2;
+		}
+		if(level > 5) {
+			sector = ~~(Math.random()*9+1);
+		}
+
 		// Sectors
 		console.log("Spawning enemies in sector: "+sector);
 		var x,y;
