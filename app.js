@@ -21,7 +21,7 @@ window.onload = function() {
 	app.initialize();
 	// Pause when window loses focus
 	window.addEventListener('blur', function() {
-		//app.menus.pause.activate();
+		app.menus.pause.activate();
 	});
 	// Canvas Handlers
 	canvas.addEventListener('click', app.clickHandle);
