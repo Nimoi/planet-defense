@@ -1370,9 +1370,6 @@ var app = {
 			maxhp = maxhp * 2;
 			value = value * 2;
 		}
-		if(level > 5) {
-			sector = ~~(Math.random()*9+1);
-		}
 
 		// Sectors
 		console.log("Spawning enemies in sector: "+sector);
